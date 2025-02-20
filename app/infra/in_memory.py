@@ -44,6 +44,9 @@ class InMemoryRepository(Generic[ItemT]):
     def delete(self, item_id: str) -> None:
         self.items = [account for account in self.items if account.id != item_id]
 
+    def get_all(self) -> list[ItemT]:
+        return self.items
+
 
 
 @dataclass

@@ -1,7 +1,5 @@
 from typing import List, Optional, Protocol, TypeVar
 
-from app.schemas.sales import SalesData
-
 ItemT = TypeVar("ItemT")
 
 
@@ -19,4 +17,7 @@ class Repository(Protocol[ItemT]):
         pass
 
     def delete(self, item_id: str) -> None:
+        pass
+
+    def get_all(self) -> List[ItemT]:
         pass

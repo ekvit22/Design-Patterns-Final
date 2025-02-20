@@ -13,28 +13,29 @@ class CampaignSqliteRepository:
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS campaigns (
-            id: TEXT,
-            discount_type: TEXT,
-            product_id: TEXT,
-            products: TEXT,
-            discount: int,
-            gift_id: TEXT,
-            gift_required_count: int
+            id TEXT,
+            discount_type TEXT,
+            product_id TEXT,
+            products TEXT,
+            discount int,
+            gift_id TEXT,
+            gift_required_count int
             );
             """
         )
-        connection.commit()
+        # connection.execute("""DELETE FROM campaigns;""")
+        # connection.commit()
 
 
     def create(self, item: Campaign) -> Campaign:
         connection.execute(
             """
-            Insert into campaings(id, discount_type, product_id, products, discount, gift_id, gift_required_count)
+            Insert into campaigns(id, discount_type, product_id, products, discount, gift_id, gift_required_count)
              values (?, ?, ?, ?, ?, ?, ?)
             """,
-            (item.id, item.type, item.product_id, item.products, item.discount, item.gift_id, item.gift_required_count),
+            (item.id, item.type, item.product_id, ";".join(item.products), item.discount, item.gift_id, item.gift_required_count),
         )
-        connection.commit()
+        # connection.commit()
         return item
 
     def read(self, item_id: str) -> Optional[Campaign]:
@@ -50,16 +51,16 @@ class CampaignSqliteRepository:
 
     def delete(self, item_id: str) -> None:
         cursor = connection.cursor()
-        cursor.execute("DELETE FROM campaings WHERE id = ?", (item_id,))
-        connection.commit()
+        cursor.execute("DELETE FROM campaigns WHERE id = ?", (item_id,))
+        # connection.commit()
 
     def get_all(self) -> list[Campaign]:
         cursor = connection.cursor()
         cursor.execute("SELECT * FROM campaigns")
         res: list[Campaign] = []
         for row in cursor.fetchall():
-            res.append(Campaign(row[0], row[1], row[2], row[3], row[4], row[5], row[6]))
-        return cursor.fetchall()
+            res.append(Campaign(row[0], row[1], row[2], row[3].split(";"), row[4], row[5], row[6]))
+        return res
 
 @dataclass
 class Sqlite:
