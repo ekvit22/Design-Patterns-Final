@@ -3,7 +3,13 @@ from http.client import HTTPException
 from typing import List
 
 from app.core.Repository import Repository
+from app.core.buyn_getn_handler import BuyNGetNHandler
 from app.core.campaign import Campaign
+from app.core.campain_handler import CampaignHandler
+from app.core.combo_handler import ComboCampaignHandler
+from app.core.discount_handler import DiscountCampaignHandler
+from app.core.none_campaign_handler import NoneCampaignHandler
+from app.core.receipt import Receipt
 from app.schemas.campaign import CreateCampaignRequest
 
 
@@ -34,3 +40,24 @@ class CampaignService:
 
     def read_campaigns(self) -> List[Campaign]:
         return self.repository.get_all()
+
+    def apply_campaigns(self, receipt: Receipt) -> Receipt:
+        campaigns = self.repository.get_all()
+
+        if not campaigns:
+            return receipt
+
+        chain: CampaignHandler = NoneCampaignHandler()
+        for campaign in reversed(campaigns):
+            if campaign.type == "discount":
+                chain = DiscountCampaignHandler(campaign, next_handler=chain)
+            elif campaign.type == "combo":
+                chain = ComboCampaignHandler(campaign, next_handler=chain)
+            elif campaign.type == "buy_n_get_n":
+                chain = BuyNGetNHandler(campaign, next_handler=chain)
+            else:
+                pass
+
+        chain.handle(receipt)
+        return receipt
+        
