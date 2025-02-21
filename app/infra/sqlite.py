@@ -14,6 +14,7 @@ class CampaignSqliteRepository:
             """
             CREATE TABLE IF NOT EXISTS campaigns (
             id TEXT,
+            name TEXT,
             discount_type TEXT,
             product_id TEXT,
             products TEXT,
@@ -23,17 +24,17 @@ class CampaignSqliteRepository:
             );
             """
         )
-        # connection.execute("""DELETE FROM campaigns;""")
+        # connection.execute("""DROP TABLE campaigns;""")
         # connection.commit()
 
 
     def create(self, item: Campaign) -> Campaign:
         connection.execute(
             """
-            Insert into campaigns(id, discount_type, product_id, products, discount, gift_id, gift_required_count)
-             values (?, ?, ?, ?, ?, ?, ?)
+            Insert into campaigns(id, name, discount_type, product_id, products, discount, gift_id, gift_required_count)
+             values (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (item.id, item.type, item.product_id, ";".join(item.products), item.discount, item.gift_id, item.gift_required_count),
+            (item.id, item.name, item.type, item.product_id, ";".join(item.products), item.discount, item.gift_id, item.gift_required_count),
         )
         # connection.commit()
         return item
@@ -43,7 +44,14 @@ class CampaignSqliteRepository:
 
 
     def read_with_name(self, item_name: str) -> Optional[Campaign]:
-        return None
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM campaigns WHERE name = ?", (item_name,))
+
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        return Campaign(row[0], row[1], row[2], row[3], row[4].split(";"), row[5], row[6], row[7])
 
     def update(self, item: Campaign) -> None:
         return None
@@ -59,13 +67,13 @@ class CampaignSqliteRepository:
         cursor.execute("SELECT * FROM campaigns")
         res: list[Campaign] = []
         for row in cursor.fetchall():
-            res.append(Campaign(row[0], row[1], row[2], row[3].split(";"), row[4], row[5], row[6]))
+            res.append(Campaign(row[0], row[1], row[2], row[3], row[4].split(";"), row[5], row[6], row[7]))
         return res
 
 @dataclass
 class Sqlite:
 
-    def offers(self) -> Repository[Campaign]:
+    def campaigns(self) -> Repository[Campaign]:
         return CampaignSqliteRepository()
 
     def clear_tables(self) -> None:

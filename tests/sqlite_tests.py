@@ -4,9 +4,9 @@ from app.infra.sqlite import Sqlite
 
 
 def test_campaign_sql_memory() -> None:
-    campaigns: Repository[Campaign] = Sqlite().offers()
-    campaign1 = Campaign("4444","discount",product_id="1234",discount=10)
-    campaign2 = Campaign("333", "combo", products=["1234","12345"], discount=10)
+    campaigns: Repository[Campaign] = Sqlite().campaigns()
+    campaign1 = Campaign("4444","test1","discount",product_id="1234",discount=10)
+    campaign2 = Campaign("333", "test2", "combo", products=["1234","12345"], discount=10)
     campaigns.create(campaign1)
     campaigns.create(campaign2)
 
