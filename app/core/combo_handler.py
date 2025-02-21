@@ -8,5 +8,9 @@ class ComboCampaignHandler(CampaignHandler):
 
     def apply_campaign(self, receipt):
         if all(any(item.id == prod_id for item in receipt.products) for prod_id in self.campaign.products):
-            print(f"Combo campaign applied for products {self.campaign.products}")
-            receipt.total -= self.campaign.discount
+            discount = self.campaign.discount/100
+            for item in receipt.products:
+                if item.id in self.campaign.products:
+                    reduced = item.total_price * discount
+                    item.total_price -= reduced
+                    receipt.total -= reduced

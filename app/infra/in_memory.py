@@ -3,11 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
-from app.core.product import Product
-from app.core.receipt import Receipt
 from app.core.Repository import Repository
-from app.core.unit import Unit
-from app.schemas.sales import SalesData
+from app.core.campaign import Campaign
 
 
 class _Item(Protocol):
@@ -51,26 +48,10 @@ class InMemoryRepository(Generic[ItemT]):
 
 @dataclass
 class InMemory:
-    _units: InMemoryRepository[Unit] = field(
+    _units: InMemoryRepository[Campaign] = field(
         init=False,
         default_factory=InMemoryRepository,
     )
 
-    _products: InMemoryRepository[Product] = field(
-        init=False,
-        default_factory=InMemoryRepository,
-    )
-
-    _receipts: InMemoryRepository[Receipt] = field(
-        init=False,
-        default_factory=InMemoryRepository,
-    )
-
-    def units(self) -> Repository[Unit]:
+    def campaigns(self) -> Repository[Campaign]:
         return self._units
-
-    def products(self) -> Repository[Product]:
-        return self._products
-
-    def receipts(self) -> Repository[Receipt]:
-        return self._receipts
