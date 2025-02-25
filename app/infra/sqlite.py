@@ -25,7 +25,7 @@ class CampaignSqliteRepository:
             """
         )
         # connection.execute("""DROP TABLE campaigns;""")
-        # connection.commit()
+        connection.commit()
 
 
     def create(self, item: Campaign) -> Campaign:
@@ -36,7 +36,7 @@ class CampaignSqliteRepository:
             """,
             (item.id, item.name, item.type, item.product_id, ";".join(item.products), item.discount, item.gift_id, item.gift_required_count),
         )
-        # connection.commit()
+        connection.commit()
         return item
 
     def read(self, item_id: str) -> Optional[Campaign]:
@@ -60,7 +60,7 @@ class CampaignSqliteRepository:
     def delete(self, item_id: str) -> None:
         cursor = connection.cursor()
         cursor.execute("DELETE FROM campaigns WHERE id = ?", (item_id,))
-        # connection.commit()
+        connection.commit()
 
     def get_all(self) -> list[Campaign]:
         cursor = connection.cursor()

@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Generator
 
 import pytest
@@ -6,8 +5,6 @@ from starlette.testclient import TestClient
 
 from app.infra.sqlite import Sqlite
 from app.runner.setup import setup
-
-file_path = Path("database.db")
 
 @pytest.fixture
 def http() -> TestClient:

@@ -11,6 +11,7 @@ def test_campaign_sql_memory() -> None:
     campaigns.create(campaign2)
 
     res = campaigns.get_all()
+    assert len(res) == 2
     assert res[0].id == campaign1.id
     assert res[1].id == campaign2.id
 
