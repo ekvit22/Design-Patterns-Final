@@ -27,5 +27,3 @@ def test_campaign_service():
 
     campaign_service.delete("1")
     assert campaign_service.read_campaigns() == []
-
-test_campaign_service()

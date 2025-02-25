@@ -72,10 +72,3 @@ def test_chain_with_overlap():
     assert receipt.total == 100
     assert receipt.products[0].total == 90
     assert receipt.products[1].total == 10
-
-test_campaign_creation()
-test_discount_campaign()
-test_combo_campaign()
-test_buy_n_get_n_campaign()
-test_chain()
-test_chain_with_overlap()
