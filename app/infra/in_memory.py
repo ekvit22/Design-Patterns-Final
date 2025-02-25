@@ -48,10 +48,10 @@ class InMemoryRepository(Generic[ItemT]):
 
 @dataclass
 class InMemory:
-    _units: InMemoryRepository[Campaign] = field(
+    _campaigns: InMemoryRepository[Campaign] = field(
         init=False,
         default_factory=InMemoryRepository,
     )
 
     def campaigns(self) -> Repository[Campaign]:
-        return self._units
+        return self._campaigns

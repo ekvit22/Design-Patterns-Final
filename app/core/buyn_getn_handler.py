@@ -8,7 +8,6 @@ class BuyNGetNHandler(CampaignHandler):
         self.campaign = campaign
 
     def apply_campaign(self, receipt):
-        count = sum(1 for item in receipt.products if item.id == self.campaign.product_id)
+        count = sum(item.quantity for item in receipt.products if item.id == self.campaign.product_id)
         if count >= self.campaign.gift_required_count:
             receipt.products.append(Products(self.campaign.gift_id, 1, 0, 0))
-            receipt.add_item(self.campaign.gift_id, free=True)
