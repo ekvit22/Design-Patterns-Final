@@ -19,5 +19,3 @@ def test_campaign_sql_memory() -> None:
     res = campaigns.get_all()
     assert len(res) == 1
     assert res[0].id == campaign2.id
-
-test_campaign_sql_memory()
