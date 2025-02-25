@@ -11,6 +11,6 @@ class ComboCampaignHandler(CampaignHandler):
             discount = self.campaign.discount/100
             for item in receipt.products:
                 if item.id in self.campaign.products:
-                    reduced = item.total_price * discount
-                    item.total_price -= reduced
+                    reduced = item.total * discount
+                    item.total -= reduced
                     receipt.total -= reduced
