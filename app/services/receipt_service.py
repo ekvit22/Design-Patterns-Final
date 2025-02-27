@@ -5,7 +5,7 @@ from typing import List
 from app.core.Repository import Repository
 from app.core.receipt import Receipt
 from app.core.receipt import Products
-from app.schemas.receipt import CreateReceiptRequest
+from app.schemas.receipt import GetDiscountRequest
 
 class ReceiptService:
     def __init__(self, repository: Repository[Receipt]):
@@ -21,5 +21,8 @@ class ReceiptService:
             )
         return receipt
 
-    
+    def get_total(self, receipt: Receipt) -> int:
+        total = sum(product.price for product in receipt.products)
+        receipt.total = total
+        return total
 
