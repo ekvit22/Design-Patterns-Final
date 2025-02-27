@@ -10,7 +10,9 @@ from starlette.requests import Request
 from app.core.repository import Repository
 from app.core.receipt import Receipt, Products
 from app.schemas.receipt import ChangeReceiptRequest, AddProductRequest
+from app.services.campaign_service import CampaignService
 from app.services.receipt_service import ReceiptService
+from app.infra.api.campaign_api import create_campaigns_service
 
 receipt_api = APIRouter()
 
@@ -33,10 +35,29 @@ def create_receipt_service(req: Request) -> ReceiptService:
     status_code=200,
     response_model=ReceiptModel,
 )
-def read_units(rec_id: str,
+def read_receipt(rec_id: str,
     service: Annotated[ReceiptService, Depends(create_receipt_service)],
 ) -> Receipt:
     return service.read(rec_id)
+
+@receipt_api.get(
+    "",
+    status_code=200,
+    response_model=int,
+)
+def get_discount(receipt_id: str,
+    receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
+    campaign_service: Annotated[CampaignService, Depends(create_campaigns_service)],
+    ) -> int:
+    receipt = receipt_service.read(receipt_id)
+    old_total = receipt_service.get_total(receipt)
+    receipt = campaign_service.apply_campaigns(receipt)
+    new_total = receipt_service.get_total(receipt)
+
+    return old_total - new_total
+
+
+
 
 @receipt_api.post(
     "",
@@ -59,7 +80,7 @@ def add_product(
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
     product_service: Annotated[ProductService, Depends(create_products_service)],
 ) -> Receipt:
-    product: Product = product_service.read(request.id)
+    product: Products = product_service.read(request.id)
     return receipt_service.add_product(receipt_id, product, request)
 
 @receipt_api.patch(
