@@ -1,11 +1,8 @@
-from typing import Optional, List
-
 from pydantic import BaseModel
 
-from app.core.receipt import Products
+class AddProductRequest(BaseModel):
+    id: str
+    quantity: int
 
-
-class CreateReceiptRequest(BaseModel):
+class ChangeReceiptRequest(BaseModel):
     status: str
-    products: Optional[List[Products]] = []
-    total: Optional[int] = 0

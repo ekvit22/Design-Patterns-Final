@@ -4,14 +4,14 @@ from typing import List
 
 @dataclass
 class Products:
-    id: str
+    product_id: str
     quantity: int
     price: int
     total: int
 
 @dataclass
 class Receipt:
-    id: str
+    receipt_id: str
     status: str
     products: List[Products]
     total: int

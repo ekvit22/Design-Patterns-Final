@@ -7,9 +7,9 @@ from fastapi.params import Depends
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from app.core.Repository import Repository
+from app.core.repository import Repository
 from app.core.receipt import Receipt, Products
-from app.schemas.receipt import CreateReceiptRequest
+from app.schemas.receipt import ChangeReceiptRequest, AddProductRequest
 from app.services.receipt_service import ReceiptService
 
 receipt_api = APIRouter()
@@ -37,3 +37,53 @@ def read_units(rec_id: str,
     service: Annotated[ReceiptService, Depends(create_receipt_service)],
 ) -> Receipt:
     return service.read(rec_id)
+
+@receipt_api.post(
+    "",
+    status_code=201,
+    response_model=ReceiptModel,
+)
+def create_receipt(
+    service: Annotated[ReceiptService, Depends(create_receipt_service)],
+) -> Receipt:
+    return service.create()
+
+@receipt_api.post(
+    "/{receipt_id}/products",
+    status_code=200,
+    response_model=ReceiptModel,
+)
+def add_product(
+    receipt_id: str,
+    request: AddProductRequest,
+    receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
+    product_service: Annotated[ProductService, Depends(create_products_service)],
+) -> Receipt:
+    product: Product = product_service.read(request.id)
+    return receipt_service.add_product(receipt_id, product, request)
+
+@receipt_api.patch(
+    "/{receipt_id}",
+    status_code=200,
+    response_model=None,
+)
+def update_receipt_status(
+    receipt_id: str,
+    request: ChangeReceiptRequest,
+    service: Annotated[ReceiptService, Depends(create_receipt_service)],
+) -> None:
+    if request.status == "open":
+        service.open_receipt(receipt_id)
+    else:
+        service.close_receipt(receipt_id)
+
+# @receipts_api.get(
+#     "/z_report",
+#     status_code=200,
+#     response_model=Optional[ReceiptItem],
+# )
+# def read_receipts(
+#     service: Annotated[ReceiptService, Depends(create_receipts_service)],
+# ) -> list[Receipt]:
+#     return service
+

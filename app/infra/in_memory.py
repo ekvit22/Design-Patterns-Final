@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
-from app.core.Repository import Repository
+from app.core.receipt import Receipt
+from app.core.repository import Repository
 from app.core.campaign import Campaign
 
 
@@ -44,6 +45,18 @@ class InMemoryRepository(Generic[ItemT]):
     def get_all(self) -> list[ItemT]:
         return self.items
 
+    def open_receipt(self, receipt_id: str) -> None:
+        for item in self.items:
+            if receipt_id == item.receipt_id:
+                item.status = "open"
+                break
+
+    def close_receipt(self, receipt_id: str) -> None:
+        for item in self.items:
+            if receipt_id == item.receipt_id:
+                item.status = "close"
+                break
+
 
 
 @dataclass
@@ -53,5 +66,13 @@ class InMemory:
         default_factory=InMemoryRepository,
     )
 
+    _receipts: InMemoryRepository[Receipt] = field(
+        init=False,
+        default_factory=InMemoryRepository,
+    )
+
     def campaigns(self) -> Repository[Campaign]:
         return self._campaigns
+
+    def receipts(self) -> Repository[Receipt]:
+        return self._receipts
