@@ -1,0 +1,6 @@
+GEL = "GEL"
+USD = "USD"
+EUR = "EUR"
+
+GEL_TO_USD = 2.795
+GEL_TO_EUR = 2.918

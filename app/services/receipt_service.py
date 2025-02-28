@@ -6,7 +6,7 @@ from app.core.repository import Repository
 from app.core.receipt import Receipt
 from app.core.receipt import Products
 from app.schemas.receipt import AddProductRequest
-
+from app.core.constants import GEL, USD, EUR, GEL_TO_USD, GEL_TO_EUR
 
 class ReceiptService:
     def __init__(self, repository: Repository[Receipt]) -> None:
@@ -27,6 +27,7 @@ class ReceiptService:
             )
         return receipt
 
+    #getter
     def get_total(self, receipt: Receipt) -> int:
         return receipt.total
 
@@ -57,4 +58,17 @@ class ReceiptService:
                                 "Receipts don't exist."}})
         return items
 
+    def calculate_payment(self, receipt_id: str, currency: str) -> int:
+        receipt = self.repository.read(receipt_id)
+        total = receipt.total
+
+        if currency == USD:
+            return int(self.change_currency(total, GEL_TO_USD))
+        elif currency == EUR:
+            return int(self.change_currency(total, GEL_TO_EUR))
+
+        return total
+
+    def change_currency(self, total: int, exchange_rate: float) -> float:
+        return total / exchange_rate
 
