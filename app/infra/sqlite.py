@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from app.core.Repository import Repository
-from app.core.campaign import Campaign
+from app.core.campaign.campaign import Campaign
 
 connection = sqlite3.connect("database.db", check_same_thread=False)
 
@@ -15,12 +15,7 @@ class CampaignSqliteRepository:
             CREATE TABLE IF NOT EXISTS campaigns (
             id TEXT,
             name TEXT,
-            discount_type TEXT,
-            product_id TEXT,
-            products TEXT,
-            discount int,
-            gift_id TEXT,
-            gift_required_count int
+            description TEXT
             );
             """
         )
@@ -31,16 +26,23 @@ class CampaignSqliteRepository:
     def create(self, item: Campaign) -> Campaign:
         connection.execute(
             """
-            Insert into campaigns(id, name, discount_type, product_id, products, discount, gift_id, gift_required_count)
-             values (?, ?, ?, ?, ?, ?, ?, ?)
+            Insert into campaigns(id, name, description)
+             values (?, ?, ?)
             """,
-            (item.id, item.name, item.type, item.product_id, ";".join(item.products), item.discount, item.gift_id, item.gift_required_count),
+            (item.id, item.name, item.description),
         )
         connection.commit()
         return item
 
     def read(self, item_id: str) -> Optional[Campaign]:
-        return None
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM campaigns WHERE id = ?", (item_id,))
+
+        row = cursor.fetchone()
+        if row is None:
+            return None
+
+        return Campaign(row[0], row[1], row[2])
 
 
     def read_with_name(self, item_name: str) -> Optional[Campaign]:
@@ -51,7 +53,7 @@ class CampaignSqliteRepository:
         if row is None:
             return None
 
-        return Campaign(row[0], row[1], row[2], row[3], row[4].split(";"), row[5], row[6], row[7])
+        return Campaign(row[0], row[1], row[2])
 
     def update(self, item: Campaign) -> None:
         return None
@@ -67,7 +69,7 @@ class CampaignSqliteRepository:
         cursor.execute("SELECT * FROM campaigns")
         res: list[Campaign] = []
         for row in cursor.fetchall():
-            res.append(Campaign(row[0], row[1], row[2], row[3], row[4].split(";"), row[5], row[6], row[7]))
+            res.append(Campaign(row[0], row[1], row[2]))
         return res
 
 @dataclass

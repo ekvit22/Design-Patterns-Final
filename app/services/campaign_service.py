@@ -1,14 +1,12 @@
 import uuid
-from http.client import HTTPException
+
 from typing import List
 
+from fastapi import HTTPException
+
 from app.core.Repository import Repository
-from app.core.buyn_getn_handler import BuyNGetNHandler
-from app.core.campaign import Campaign
-from app.core.campain_handler import CampaignHandler
-from app.core.combo_handler import ComboCampaignHandler
-from app.core.discount_handler import DiscountCampaignHandler
-from app.core.none_campaign_handler import NoneCampaignHandler
+from app.core.campaign.campaign import Campaign
+from app.core.campaign.campaign_factory import CampaignFactory
 from app.core.receipt import Receipt
 from app.schemas.campaign import CreateCampaignRequest
 
@@ -18,14 +16,12 @@ class CampaignService:
         self.repository = repository
 
     def create(self, request: CreateCampaignRequest) -> Campaign:
-        existing_campaign = self.repository.read_with_name(request.name)
-        if existing_campaign is not None:
-            raise HTTPException(
-                status_code=409,
-                detail={"message": f"Campaign with name<{request.name}> already exists."}
-            )
-        new_campaign = Campaign(id=str(uuid.uuid4()), name=request.name, type=request.type, product_id=request.product_id, products=request.products, discount=request.discount, gift_id=request.gift_id, gift_required_count=request.gift_required_count)
 
+        new_campaign = Campaign(
+            id=str(uuid.uuid4()),
+            name=request.name,
+            description=request.description
+        )
         self.repository.create(new_campaign)
         return new_campaign
 
@@ -46,29 +42,33 @@ class CampaignService:
 
         if not campaigns:
             return receipt
-        first = True
-        chain: CampaignHandler = NoneCampaignHandler()
-        for campaign in reversed(campaigns):
-            if first:
-                first = False
-                if campaign.type == "discount":
-                    chain = DiscountCampaignHandler(campaign)
-                elif campaign.type == "combo":
-                    chain = ComboCampaignHandler(campaign)
-                elif campaign.type == "buy_n_get_n":
-                    chain = BuyNGetNHandler(campaign)
-                else:
-                    pass
-                continue
 
-            if campaign.type == "discount":
-                chain = DiscountCampaignHandler(campaign, next_handler=chain)
-            elif campaign.type == "combo":
-                chain = ComboCampaignHandler(campaign, next_handler=chain)
-            elif campaign.type == "buy_n_get_n":
-                chain = BuyNGetNHandler(campaign, next_handler=chain)
-            else:
-                pass
+        chain = CampaignFactory.build_chain(campaigns)
+
+
+        # first = True
+        # chain: CampaignHandler = NoneCampaignHandler()
+        # for campaign in reversed(campaigns):
+        #     if first:
+        #         first = False
+        #         if campaign.type == "discount":
+        #             chain = DiscountCampaignHandler(campaign)
+        #         elif campaign.type == "combo":
+        #             chain = ComboCampaignHandler(campaign)
+        #         elif campaign.type == "buy_n_get_n":
+        #             chain = BuyNGetNHandler(campaign)
+        #         else:
+        #             pass
+        #         continue
+        #
+        #     if campaign.type == "discount":
+        #         chain = DiscountCampaignHandler(campaign, next_handler=chain)
+        #     elif campaign.type == "combo":
+        #         chain = ComboCampaignHandler(campaign, next_handler=chain)
+        #     elif campaign.type == "buy_n_get_n":
+        #         chain = BuyNGetNHandler(campaign, next_handler=chain)
+        #     else:
+        #         pass
 
         chain.handle(receipt)
         return receipt

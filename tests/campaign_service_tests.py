@@ -9,15 +9,14 @@ def test_campaign_service():
     campaign_service = CampaignService(repository)
 
     assert campaign_service.read_campaigns() == []
+
     campaign_service.create(
         CreateCampaignRequest(
             name="test",
-            type="discount",
-            product_id="1",
-            discount=10)
+            description="discount;1;50")
     )
-
-    assert campaign_service.read_campaigns()[0].name == "test1"
+    read_campaign = campaign_service.read_campaigns()[0]
+    assert read_campaign.name == "test"
 
     receipt = Receipt("4444", "open", [Products("1", 1, 30, 30)], 30)
 
@@ -25,5 +24,5 @@ def test_campaign_service():
 
     assert receipt.total == 15
 
-    campaign_service.delete("1")
+    campaign_service.delete(read_campaign.id)
     assert campaign_service.read_campaigns() == []

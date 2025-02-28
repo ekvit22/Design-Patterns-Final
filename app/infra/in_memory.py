@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
 from app.core.Repository import Repository
-from app.core.campaign import Campaign
+from app.core.campaign.campaign import Campaign
 
 
 class _Item(Protocol):

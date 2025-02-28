@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from starlette.requests import Request
 
 from app.core.Repository import Repository
-from app.core.campaign import Campaign
+from app.core.campaign.campaign import Campaign
 from app.schemas.campaign import CreateCampaignRequest
 from app.services.campaign_service import CampaignService
 
@@ -17,12 +17,7 @@ campaigns_api = APIRouter()
 class CampaignItem(BaseModel):
     id: str
     name: str
-    type: str
-    product_id: str
-    products: list
-    discount: int
-    gift_id: str
-    gift_required_count: int
+    description: str
 
 
 class _Infra(Protocol):
@@ -51,22 +46,22 @@ def create_campaign(
 
 @campaigns_api.delete(
     "/{campaign_id}",
-    status_code=200,
+    status_code=201,
     response_model=None,
 )
 def delete(
     campaign_id: str,
     service: Annotated[CampaignService, Depends(create_campaigns_service)],
 ) -> None:
-   service.delete(campaign_id)
+    service.delete(campaign_id)
 
 
 @campaigns_api.get(
     "",
-    status_code=200,
+    status_code=201,
     response_model=List[CampaignItem],
 )
-def read_units(
+def read_campaigns(
     service: Annotated[CampaignService, Depends(create_campaigns_service)],
 ) -> List[Campaign]:
     return service.read_campaigns()
