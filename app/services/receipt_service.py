@@ -28,9 +28,8 @@ class ReceiptService:
         return receipt
 
     def get_total(self, receipt: Receipt) -> int:
-        total = sum(product.price for product in receipt.products)
-        receipt.total = total
-        return total
+        return receipt.total
+
     def open_receipt(self, receipt_id: str) -> None:
         self.repository.open_receipt(receipt_id)
 

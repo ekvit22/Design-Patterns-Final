@@ -45,7 +45,7 @@ def read_receipt(rec_id: str,
     status_code=200,
     response_model=int,
 )
-def get_discount(receipt_id: str,
+def get_discounted_price(receipt_id: str,
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
     campaign_service: Annotated[CampaignService, Depends(create_campaigns_service)],
     ) -> int:
@@ -55,8 +55,6 @@ def get_discount(receipt_id: str,
     new_total = receipt_service.get_total(receipt)
 
     return old_total - new_total
-
-
 
 
 @receipt_api.post(
