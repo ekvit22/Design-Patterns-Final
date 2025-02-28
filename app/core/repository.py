@@ -40,5 +40,5 @@ class Repository(Protocol[ItemT]):
     def close_shift(self, shift_id : str) -> None:
         pass
 
-    def get_products_from_receipt(self, receipt_id: str) -> List[ItemT]:
+    def get_products_from_receipt(self, receipt_id: str) -> List[str]:
         pass

@@ -6,6 +6,7 @@ from typing import Generic, List, Optional, Protocol, TypeVar
 from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.campaign import Campaign
+from app.core.shift import Shift
 
 
 class _Item(Protocol):
@@ -57,6 +58,30 @@ class InMemoryRepository(Generic[ItemT]):
                 item.status = "close"
                 break
 
+    def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
+        return [item for item in self.items if isinstance(item, Shift) and item.shift_id in receipt_ids]
+
+    def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+        shift = next((item for item in self.items if isinstance(item, Shift) and item.shift_id == shift_id), None)
+        return shift.receipts if shift else []
+
+
+    def open_shift(self, shift_id: str) -> None:
+        for item in self.items:
+            if item.shift_id == shift_id:
+                item.status = "open"
+                break
+
+    def close_shift(self, shift_id: str) -> None:
+        for item in self.items:
+            if item.shift_id == shift_id:
+                item.status = "closed"
+                break
+
+    def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+        shift = self.read(shift_id)
+        if shift.status == "open":
+            shift.receipts.append(receipt_id)
 
 
 @dataclass
@@ -71,8 +96,17 @@ class InMemory:
         default_factory=InMemoryRepository,
     )
 
+    _shifts: InMemoryRepository[Shift] = field(
+        init=False,
+        default_factory=InMemoryRepository
+    )
+
+
     def campaigns(self) -> Repository[Campaign]:
         return self._campaigns
 
     def receipts(self) -> Repository[Receipt]:
         return self._receipts
+
+    def shifts(self) -> Repository[Shift]:
+        return self._shifts

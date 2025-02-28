@@ -26,7 +26,7 @@ class CampaignSqliteRepository:
             );
             """
         )
-        # connection.execute("""DROP TABLE campaigns;""")
+        connection.execute("""DROP TABLE campaigns;""")
         connection.commit()
 
 
@@ -82,7 +82,7 @@ class ReceiptRepository:
                 total INTEGER,
             )
         """)
-        # connection.commit()
+        connection.commit()
 
         connection.execute("""
             CREATE TABLE IF NOT EXISTS receipts_products (
@@ -95,14 +95,15 @@ class ReceiptRepository:
             )
         """)
 
-        # connection.commit()
+        connection.commit()
 
-    def create(self, item: Receipt) -> None:
+    def create(self, item: Receipt) -> Receipt:
         connection.execute("""
             INSERT INTO receipts(receipt_id, status, total)
             VALUES(?, ?, ?)""",
             (item.receipt_id, item.status, item.total)
         )
+        return item
 
         for product in item.products:
             connection.execute("""
@@ -110,7 +111,7 @@ class ReceiptRepository:
                 VALUES(?, ?, ?, ?, ?)""",
                 (product.product_id, item.receipt_id, product.quantity, product.price, product.total)
             )
-        # connection.commit()
+        connection.commit()
 
 
     def add_product(self, receipt_id: str, product: Products) -> None:
@@ -124,21 +125,21 @@ class ReceiptRepository:
             UPDATE receipts SET total = total + ? WHERE receipt_id = ?""",
            (product.total, receipt_id)
         )
-        # connection.commit()
-    #
+        connection.commit()
+
     def open_receipt(self, receipt_id: str) -> None:
         connection.execute("""
             UPDATE receipts SET status = ? WHERE receipt_id = ?""",
             ("open", receipt_id)
         )
-        # connection.commit()
+        connection.commit()
 
     def close_receipt(self, receipt_id: str) -> None:
         connection.execute("""
             UPDATE receipts SET status = ? WHERE receipt_id = ?""",
             ("close", receipt_id)
         )
-        # connection.commit()
+        connection.commit()
 
     def update(self, item: Receipt) -> None:
         self.delete(item.receipt_id)
@@ -157,17 +158,6 @@ class ReceiptRepository:
         for receipt_row in cursor.fetchall():
             products = self.get_products_from_receipt(receipt_row[0])
             receipts.append(Receipt(receipt_id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
-        return receipts
-
-    def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
-        cursor = connection.cursor()
-        receipts = []
-        for receipt_id in receipt_ids:
-            cursor.execute("SELECT * FROM receipts WHERE receipt_id = ?", (receipt_id,))
-            receipt_row = cursor.fetchone()
-            if receipt_row is not None:
-                products = self.get_products_from_receipt(receipt_row[0])
-                receipts.append(Receipt(receipt_id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
         return receipts
 
     def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
@@ -196,7 +186,7 @@ class ShiftRepository(Repository[Shift]):
                 status TEXT
             )
         """)
-        # connection.commit()
+        connection.commit()
 
         connection.execute("""
             CREATE TABLE IF NOT EXISTS shift_receipts (
@@ -205,15 +195,25 @@ class ShiftRepository(Repository[Shift]):
                 FOREIGN KEY (shift_id) REFERENCES shifts (shift_id)
             )
         """)
-        # connection.commit()
+        connection.commit()
 
-    def create(self, request: Shift) -> None:
+    def create(self, item: Shift) -> Shift:
         connection.execute("""
             INSERT INTO shifts(shift_id, status)
             VALUES(?, ?)""",
-            (request.shift_id, request.status)
+            (item.shift_id, item.status)
         )
-        # connection.commit()
+        connection.commit()
+        return item
+
+    def read(self, shift_id: str) -> Optional[Shift]:
+        cursor = connection.cursor()
+        cursor.execute("""SELECT * FROM shifts WHERE shift_id = ?""", (shift_id,))
+        shift_row = cursor.fetchone()
+        if shift_row is None:
+            return None
+        receipts = self.get_shift_receipt_ids(shift_id)
+        return Shift(shift_id=shift_row[0], status=shift_row[1], receipts=receipts)
 
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
         cursor = connection.cursor()
@@ -225,15 +225,24 @@ class ShiftRepository(Repository[Shift]):
             UPDATE shifts SET status = ? WHERE shift_id = ?""",
             ("open", shift_id)
         )
-        # connection.commit()
+        connection.commit()
 
     def close_shift(self, shift_id : str) -> None:
         connection.execute("""
             UPDATE shifts SET status = ? WHERE shift_id = ?""",
             ("close", shift_id)
         )
-        # connection.commit()
+        connection.commit()
 
+    def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+        shift = self.read(shift_id)
+        if shift.status == "open":
+            connection.execute("""
+                INSERT INTO shift_receipts(shift_id, receipt_id)
+                VALUES(?, ?)""",
+                (shift_id, receipt_id)
+            )
+            connection.commit()
 
 @dataclass
 class Sqlite:
@@ -244,6 +253,8 @@ class Sqlite:
     def receipts(self) -> Repository[Receipt]:
         return ReceiptRepository()
 
+    def shifts(self) -> Repository[Shift]:
+        return ShiftRepository()
 
 
     def clear_tables(self) -> None:

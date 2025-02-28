@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 from app.core.receipt import Receipt
 
@@ -7,4 +8,4 @@ from app.core.receipt import Receipt
 class Shift:
     shift_id: str
     status: str
-    receipts: list[Receipt]
+    receipts: List[str]

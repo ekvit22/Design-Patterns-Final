@@ -9,10 +9,12 @@ from starlette.requests import Request
 
 from app.core.repository import Repository
 from app.core.receipt import Receipt, Products
+from app.infra.api.shift_api import create_shift_service
 from app.schemas.receipt import ChangeReceiptRequest, AddProductRequest
 from app.services.campaign_service import CampaignService
 from app.services.receipt_service import ReceiptService
 from app.infra.api.campaign_api import create_campaigns_service
+from app.services.shift_service import ShiftService
 
 receipt_api = APIRouter()
 
@@ -20,7 +22,7 @@ class _Infra(Protocol):
     def receipt(self) -> Repository[Receipt]:
         pass
 
-class ReceiptModel(BaseModel):
+class ReceiptItem(BaseModel):
     id: str
     status: str
     products: List[Products]
@@ -33,7 +35,7 @@ def create_receipt_service(req: Request) -> ReceiptService:
 @receipt_api.get(
     "",
     status_code=200,
-    response_model=ReceiptModel,
+    response_model=ReceiptItem,
 )
 def read_receipt(rec_id: str,
     service: Annotated[ReceiptService, Depends(create_receipt_service)],
@@ -56,13 +58,10 @@ def get_discount(receipt_id: str,
 
     return old_total - new_total
 
-
-
-
 @receipt_api.post(
     "",
     status_code=201,
-    response_model=ReceiptModel,
+    response_model=ReceiptItem,
 )
 def create_receipt(
     service: Annotated[ReceiptService, Depends(create_receipt_service)],
@@ -72,7 +71,7 @@ def create_receipt(
 @receipt_api.post(
     "/{receipt_id}/products",
     status_code=200,
-    response_model=ReceiptModel,
+    response_model=ReceiptItem,
 )
 def add_product(
     receipt_id: str,
@@ -98,13 +97,15 @@ def update_receipt_status(
     else:
         service.close_receipt(receipt_id)
 
-# @receipts_api.get(
-#     "/z_report",
-#     status_code=200,
-#     response_model=Optional[ReceiptItem],
-# )
-# def read_receipts(
-#     service: Annotated[ReceiptService, Depends(create_receipts_service)],
-# ) -> list[Receipt]:
-#     return service
+@receipt_api.get(
+    "/{shift_id}/z_reports",
+    status_code=200,
+    response_model=List[ReceiptItem],
+)
+def get_z_reports(shift_id: str,
+    receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
+    shift_service: Annotated[ShiftService, Depends(create_shift_service)],
+) -> List[Receipt]:
+    receipt_ids = shift_service.get_shift_receipt_ids(shift_id)
+    return receipt_service.get_every_receipt(receipt_ids)
 
