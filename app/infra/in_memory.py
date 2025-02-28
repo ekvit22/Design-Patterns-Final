@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
 from app.core.receipt import Receipt
-from app.core.Repository import Repository
+from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 
 

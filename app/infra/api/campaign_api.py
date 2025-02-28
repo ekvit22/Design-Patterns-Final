@@ -7,7 +7,7 @@ from fastapi.params import Depends
 from pydantic import BaseModel
 from starlette.requests import Request
 
-from app.core.Repository import Repository
+from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 from app.schemas.campaign import CreateCampaignRequest
 from app.services.campaign_service import CampaignService

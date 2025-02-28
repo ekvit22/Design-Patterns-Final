@@ -13,7 +13,7 @@ class ReceiptService:
         self.repository = repository
 
     def create(self) -> Receipt:
-        new_receipt = Receipt(receipt_id=str(uuid.uuid4()), status="open", products=[], total=0)
+        new_receipt = Receipt(id=str(uuid.uuid4()), status="open", products=[], total=0)
         self.repository.create(new_receipt)
         return new_receipt
 
