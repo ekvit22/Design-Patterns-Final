@@ -9,10 +9,5 @@ class AddProductRequest(BaseModel):
     id: str
     quantity: int
 
-
-class GetDiscountRequest(BaseModel):
-    products: List[Products]
-    total: int
-
 class ChangeReceiptRequest(BaseModel):
     status: str

@@ -14,7 +14,7 @@ def setup() -> FastAPI:
     load_dotenv()
     api = FastAPI()
 
-    api.state.infra = Sqlite()
+    api.state.infra = InMemory()
     if os.getenv("REPOSITORY_KIND") == "sqlite":
         api.state.infra = Sqlite()
 

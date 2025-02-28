@@ -5,7 +5,7 @@ from typing import Generic, List, Optional, Protocol, TypeVar
 
 from app.core.receipt import Receipt
 from app.core.repository import Repository
-from app.core.campaign import Campaign
+from app.core.campaign.campaign import Campaign
 from app.core.shift import Shift
 
 

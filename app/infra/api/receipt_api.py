@@ -14,6 +14,7 @@ from app.schemas.receipt import ChangeReceiptRequest, AddProductRequest
 from app.services.campaign_service import CampaignService
 from app.services.receipt_service import ReceiptService
 from app.infra.api.campaign_api import create_campaigns_service
+from app.core.constants import GEL, USD, EUR
 from app.services.shift_service import ShiftService
 
 receipt_api = APIRouter()
@@ -43,11 +44,11 @@ def read_receipt(rec_id: str,
     return service.read(rec_id)
 
 @receipt_api.get(
-    "",
+    "/receipts/{receipt_id}/discounted_price",
     status_code=200,
     response_model=int,
 )
-def get_discount(receipt_id: str,
+def get_discounted_price(receipt_id: str,
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
     campaign_service: Annotated[CampaignService, Depends(create_campaigns_service)],
     ) -> int:
@@ -57,6 +58,26 @@ def get_discount(receipt_id: str,
     new_total = receipt_service.get_total(receipt)
 
     return old_total - new_total
+
+@receipt_api.post(
+    "/receipts/{receipt_id}/quotes",
+    status_code=200,
+    response_model=int,
+)
+def calculate_payment(receipt_id: str,
+    currency: str,
+    receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
+    ) -> int:
+    return receipt_service.calculate_payment(receipt_id, currency)
+
+@receipt_api.post(
+    "/receipts/{receipt_id}/payments",
+    status_code=200,
+    response_model=int,
+)
+def complete_payment(receipt_id: str,
+    service: Annotated[ReceiptService, Depends(create_receipt_service)]) -> None:
+    return service.close_receipt(receipt_id)
 
 @receipt_api.post(
     "",
