@@ -42,7 +42,7 @@ def read_receipt(rec_id: str,
     return service.read(rec_id)
 
 @receipt_api.get(
-    "/receipts/{receipt_id}",
+    "/receipts/{receipt_id}/discounted_price",
     status_code=200,
     response_model=int,
 )
@@ -69,6 +69,15 @@ def calculate_payment(receipt_id: str,
     return receipt_service.calculate_payment(receipt_id, currency)
 
 @receipt_api.post(
+    "/receipts/{receipt_id}/payments",
+    status_code=200,
+    response_model=int,
+)
+def complete_payment(receipt_id: str,
+    service: Annotated[ReceiptService, Depends(create_receipt_service)]) -> None:
+    return service.close_receipt(receipt_id)
+
+@receipt_api.post(
     "/receipts",
     status_code=201,
     response_model=ReceiptModel,
@@ -93,7 +102,7 @@ def add_product(
     return receipt_service.add_product(receipt_id, product, request)
 
 @receipt_api.patch(
-    "/{receipt_id}",
+    "/receipts/{receipt_id}",
     status_code=200,
     response_model=None,
 )
