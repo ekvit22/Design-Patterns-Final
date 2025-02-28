@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 from app.core.receipt import Receipt, Products
-from app.core.Repository import Repository
+from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 from app.core.shift import Shift
 
@@ -103,14 +103,14 @@ class ReceiptRepository:
         connection.execute("""
             INSERT INTO receipts(receipt_id, status, total)
             VALUES(?, ?, ?)""",
-            (item.receipt_id, item.status, item.total)
+            (item.id, item.status, item.total)
         )
 
         for product in item.products:
             connection.execute("""
                 INSERT INTO receipts_products(product_id, receipt_id, quantity, price, total)
                 VALUES(?, ?, ?, ?, ?)""",
-                (product.product_id, item.receipt_id, product.quantity, product.price, product.total)
+                (product.id, item.id, product.quantity, product.price, product.total)
             )
         # connection.commit()
 
@@ -119,7 +119,7 @@ class ReceiptRepository:
         connection.execute("""
             INSERT INTO receipts_products(product_id, receipt_id, quantity, price, total)
             VALUES(?, ?, ?, ?, ?)""",
-            (product.product_id, receipt_id, product.quantity, product.price, product.total)
+            (product.id, receipt_id, product.quantity, product.price, product.total)
         )
 
         connection.execute("""
@@ -143,7 +143,7 @@ class ReceiptRepository:
         # connection.commit()
 
     def update(self, item: Receipt) -> None:
-        self.delete(item.receipt_id)
+        self.delete(item.id)
         self.create(item)
 
     def delete(self, item_id: str) -> None:
@@ -158,7 +158,7 @@ class ReceiptRepository:
         receipts = []
         for receipt_row in cursor.fetchall():
             products = self.get_products_from_receipt(receipt_row[0])
-            receipts.append(Receipt(receipt_id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
+            receipts.append(Receipt(id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
         return receipts
 
     def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
@@ -169,14 +169,14 @@ class ReceiptRepository:
             receipt_row = cursor.fetchone()
             if receipt_row is not None:
                 products = self.get_products_from_receipt(receipt_row[0])
-                receipts.append(Receipt(receipt_id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
+                receipts.append(Receipt(id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
         return receipts
 
     def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
         cursor = connection.cursor()
         cursor.execute("""SELECT * FROM receipts_products WHERE receipt_id = ?""", (receipt_id,))
         product_rows = cursor.fetchall()
-        products = [Products(product_id=product_row[0], quantity=product_row[2], price=product_row[3], total=product_row[4]) for product_row in product_rows]
+        products = [Products(id=product_row[0], quantity=product_row[2], price=product_row[3], total=product_row[4]) for product_row in product_rows]
         return products
 
     def read(self, receipt_id: str) -> Optional[Receipt]:
@@ -186,7 +186,7 @@ class ReceiptRepository:
         if receipt_row is  None:
             return None
         products = self.get_products_from_receipt(receipt_id)
-        result = Receipt(receipt_id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2])
+        result = Receipt(id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2])
         return result
 
 @dataclass
@@ -213,7 +213,7 @@ class ShiftRepository(Repository[Shift]):
         connection.execute("""
             INSERT INTO shifts(shift_id, status)
             VALUES(?, ?)""",
-            (request.shift_id, request.status)
+            (request.id, request.status)
         )
         # connection.commit()
 

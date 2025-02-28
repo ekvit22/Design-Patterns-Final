@@ -1,5 +1,5 @@
-from app.core.Repository import Repository
-from app.core.campaign import Campaign
+from app.core.repository import Repository
+from app.core.campaign.campaign import Campaign
 from app.infra.sqlite import Sqlite
 
 
