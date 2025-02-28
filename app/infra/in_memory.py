@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
 from app.core.receipt import Receipt
-from app.core.repository import Repository
-from app.core.campaign import Campaign
+from app.core.Repository import Repository
+from app.core.campaign.campaign import Campaign
 
 
 class _Item(Protocol):
@@ -66,13 +66,5 @@ class InMemory:
         default_factory=InMemoryRepository,
     )
 
-    _receipts: InMemoryRepository[Receipt] = field(
-        init=False,
-        default_factory=InMemoryRepository,
-    )
-
     def campaigns(self) -> Repository[Campaign]:
         return self._campaigns
-
-    def receipts(self) -> Repository[Receipt]:
-        return self._receipts
