@@ -32,38 +32,38 @@ class ReceiptServiceTests(unittest.TestCase):
         mock_receipt.total = 100
         self.receipt_service.repository.read.return_value = mock_receipt
 
-        result = self.receipt_service.calculate_payment("receipt-123", GEL)
+        result = self.receipt_service.calculate_payment("1234", GEL)
         self.assertEqual(result, 100)
-        self.receipt_service.repository.read.assert_called_once_with("receipt-123")
+        self.receipt_service.repository.read.assert_called_once_with("1234")
 
     def test_calculate_payment_usd(self):
         mock_receipt = Mock()
         mock_receipt.total = 279
         self.receipt_service.repository.read.return_value = mock_receipt
 
-        result = self.receipt_service.calculate_payment("receipt-123", USD)
+        result = self.receipt_service.calculate_payment("2222", USD)
         self.assertEqual(result, 99)
-        self.receipt_service.repository.read.assert_called_once_with("receipt-123")
+        self.receipt_service.repository.read.assert_called_once_with("2222")
 
     def test_calculate_payment_eur(self):
         mock_receipt = Mock()
         mock_receipt.total = 291
         self.receipt_service.repository.read.return_value = mock_receipt
 
-        result = self.receipt_service.calculate_payment("receipt-123", EUR)
+        result = self.receipt_service.calculate_payment("1222", EUR)
         self.assertEqual(result, 99)
-        self.receipt_service.repository.read.assert_called_once_with("receipt-123")
+        self.receipt_service.repository.read.assert_called_once_with("1222")
 
     def test_calculate_payment_rounding(self):
         mock_receipt = Mock()
         mock_receipt.total = 280
         self.receipt_service.repository.read.return_value = mock_receipt
 
-        result = self.receipt_service.calculate_payment("receipt-123", USD)
+        result = self.receipt_service.calculate_payment("1111", USD)
         self.assertEqual(result, 100)
 
         mock_receipt.total = 142
-        result = self.receipt_service.calculate_payment("receipt-456", EUR)
+        result = self.receipt_service.calculate_payment("1111", EUR)
         self.assertEqual(result, 48)
 
     def test_calculate_payment_edge_cases(self):
@@ -71,9 +71,9 @@ class ReceiptServiceTests(unittest.TestCase):
         mock_receipt.total = 0
         self.receipt_service.repository.read.return_value = mock_receipt
 
-        result = self.receipt_service.calculate_payment("receipt-zero", USD)
+        result = self.receipt_service.calculate_payment("1111", USD)
         self.assertEqual(result, 0)
 
         mock_receipt.total = 1000000
-        result = self.receipt_service.calculate_payment("receipt-large", EUR)
+        result = self.receipt_service.calculate_payment("1111", EUR)
         self.assertEqual(result, int(1000000 / GEL_TO_EUR))
