@@ -42,3 +42,6 @@ class Repository(Protocol[ItemT]):
 
     def get_products_from_receipt(self, receipt_id: str) -> List[str]:
         pass
+
+    def read_with_barcode(self, item_barcode: str) -> Optional[ItemT]:
+        pass
