@@ -3,10 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
+from app.core.campaign.xreport import XReport
+from app.core.product import Product
 from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 from app.core.shift import Shift
+from app.schemas.sales import SalesData
 
 
 class _Item(Protocol):
@@ -83,6 +86,21 @@ class InMemoryRepository(Generic[ItemT]):
         if shift.status == "open":
             shift.receipts.append(receipt_id)
 
+    def read_with_barcode(self, barcode: str) -> Optional[ItemT]:
+        for item in self.items:
+            if hasattr(item, "barcode") and item.barcode == barcode:
+                return item
+        return None
+
+    def get_sales_data(self) -> Optional[SalesData]:
+        res: SalesData = SalesData(n_receipts=0, revenue=0)
+        for item in self.items:
+            if hasattr(item, "status") and item.status == "closed":
+                res.n_receipts += 1
+                if hasattr(item, "total"):
+                    res.revenue += item.total
+        return res
+
 
 @dataclass
 class InMemory:
@@ -101,6 +119,16 @@ class InMemory:
         default_factory=InMemoryRepository
     )
 
+    _products: InMemoryRepository[Product] = field(
+        init=False,
+        default_factory=InMemoryRepository,
+    )
+
+    _xreport: InMemoryRepository[XReport] = field(
+        init=False,
+        default_factory=InMemoryRepository,
+    )
+
 
     def campaigns(self) -> Repository[Campaign]:
         return self._campaigns
@@ -110,3 +138,9 @@ class InMemory:
 
     def shifts(self) -> Repository[Shift]:
         return self._shifts
+
+    def products(self) -> Repository[Product]:
+        return self._products
+
+    def xreport(self) -> Repository[XReport]:
+        return self._xreport

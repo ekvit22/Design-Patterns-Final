@@ -7,6 +7,8 @@ from app.core.receipt import Receipt
 from app.core.receipt import Products
 from app.schemas.receipt import AddProductRequest
 from app.core.constants import GEL, USD, EUR, GEL_TO_USD, GEL_TO_EUR
+from app.schemas.sales import SalesData
+
 
 class ReceiptService:
     def __init__(self, repository: Repository[Receipt]) -> None:
@@ -80,4 +82,13 @@ class ReceiptService:
 
     def change_currency(self, total: int, exchange_rate: float) -> float:
         return total / exchange_rate
+
+    def get_sales_data(self) -> SalesData:
+        res: Optional[SalesData] = self.repository.get_sales_data()
+        if res is None:
+            raise HTTPException(status_code=404,
+                                detail={"error": {"message":
+                                                      "Something went wrong"}}
+                                )
+        return SalesData(n_receipts=res.n_receipts, revenue=res.revenue)
 
