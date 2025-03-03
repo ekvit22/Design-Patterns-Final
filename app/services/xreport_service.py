@@ -23,7 +23,7 @@ class XReportService:
         receipts = self.receipt_repo.get_every_receipt(receipt_ids)
 
         total_receipts = len(receipts)
-        item_sales = defaultdict(int)
+        item_sales = defaultdict(float)
         revenue_by_currency = defaultdict(float)
 
         for receipt in receipts:

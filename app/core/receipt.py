@@ -8,11 +8,11 @@ class Products:
     id: str
     quantity: int
     price: int
-    total: int
+    total: float
 
 @dataclass
 class Receipt:
     id: str
     status: str
     products: List[Products]
-    total: int
+    total: float

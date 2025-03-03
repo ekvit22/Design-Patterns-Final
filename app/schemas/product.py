@@ -5,7 +5,7 @@ class CreateProductRequest(BaseModel):
     unit_id: str
     name: str
     barcode: str
-    price: int
+    price: float
 
 class UpdateProductRequest(BaseModel):
-    price: int
+    price: float
