@@ -29,7 +29,7 @@ class ReceiptItem(BaseModel):
     id: str
     status: str
     products: List[Products]
-    total: int
+    total: float
 
 def create_receipt_service(req: Request) -> ReceiptService:
     infra: _Infra = req.app.state.infra
@@ -48,12 +48,12 @@ def read_receipt(receipt_id: str,
 @receipt_api.get(
     "/{receipt_id}/discounted_price",
     status_code=200,
-    response_model=int,
+    response_model=float,
 )
 def get_discounted_price(receipt_id: str,
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
     campaign_service: Annotated[CampaignService, Depends(create_campaigns_service)],
-    ) -> int:
+    ) -> float:
     receipt = receipt_service.read(receipt_id)
     old_total = receipt_service.get_total(receipt)
     receipt = campaign_service.apply_campaigns(receipt)
@@ -64,12 +64,12 @@ def get_discounted_price(receipt_id: str,
 @receipt_api.post(
     "/{receipt_id}/quotes",
     status_code=200,
-    response_model=int,
+    response_model=float,
 )
 def calculate_payment(receipt_id: str,
     currency: str,
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
-    ) -> int:
+    ) -> float:
     return receipt_service.calculate_payment(receipt_id, currency)
 
 @receipt_api.post(

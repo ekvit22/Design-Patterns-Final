@@ -20,7 +20,7 @@ def test_should_get_discounted_price(http: TestClient) -> None:
 
     response = http.get(f"/receipts/{receipt_id}/discounted_price")
     assert response.status_code == 200
-    assert isinstance(response.json(), int)
+    assert isinstance(response.json(), float)
 
 def test_should_calculate_payment(http: TestClient) -> None:
     response = http.post("/receipts")
@@ -29,7 +29,7 @@ def test_should_calculate_payment(http: TestClient) -> None:
 
     response = http.post(f"/receipts/{receipt_id}/quotes?currency=USD")
     assert response.status_code == 200
-    assert isinstance(response.json(), int)
+    assert isinstance(response.json(), float)
 
 def test_should_complete_payment(http: TestClient) -> None:
     response = http.post("/receipts")

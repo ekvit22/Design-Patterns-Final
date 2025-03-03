@@ -19,7 +19,7 @@ class ProductItem(BaseModel):
     unit_id: str
     name: str
     barcode: str
-    price: int
+    price: float
 
 class _Infra(Protocol):
     def products(self) -> Repository[Product]:

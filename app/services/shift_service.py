@@ -12,7 +12,7 @@ class ShiftService:
         self.repository = repository
 
     def create(self) -> Shift:
-        new_receipt = Shift(shift_id=str(uuid.uuid4()), status="open", receipts=[])
+        new_receipt = Shift(id=str(uuid.uuid4()), status="open", receipts=[])
         self.repository.create(new_receipt)
         return new_receipt
 

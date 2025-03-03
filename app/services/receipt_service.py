@@ -50,6 +50,7 @@ class ReceiptService:
         product_total = product_price*request.quantity
         added_product = Products(request.id, request.quantity, product_price, product_total)
         new_receipt.products.append(added_product)
+        new_receipt.total += product_total
         self.repository.update(new_receipt)
         return new_receipt
 
@@ -69,18 +70,18 @@ class ReceiptService:
             receipts.append(receipt)
         return receipts
 
-    def calculate_payment(self, receipt_id: str, currency: str) -> int:
+    def calculate_payment(self, receipt_id: str, currency: str) -> float:
         receipt = self.repository.read(receipt_id)
         total = receipt.total
 
         if currency == USD:
-            return int(self.change_currency(total, GEL_TO_USD))
+            return self.change_currency(total, GEL_TO_USD)
         elif currency == EUR:
-            return int(self.change_currency(total, GEL_TO_EUR))
+            return self.change_currency(total, GEL_TO_EUR)
 
         return total
 
-    def change_currency(self, total: int, exchange_rate: float) -> float:
+    def change_currency(self, total: float, exchange_rate: float) -> float:
         return total / exchange_rate
 
     def get_sales_data(self) -> SalesData:

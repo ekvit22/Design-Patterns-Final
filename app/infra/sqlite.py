@@ -83,23 +83,23 @@ class ReceiptRepository:
             CREATE TABLE IF NOT EXISTS receipts (
                 receipt_id TEXT,
                 status TEXT,
-                total INTEGER
-            )
+                total REAL
+            );
         """)
-        # connection.commit()
+        connection.commit()
 
         connection.execute("""
             CREATE TABLE IF NOT EXISTS receipts_products (
                 product_id TEXT,
                 receipt_id TEXT,
                 quantity INTEGER,
-                price INTEGER,
-                total INTEGER,
+                price REAL,
+                total REAL,
                 FOREIGN KEY (receipt_id) REFERENCES receipts(receipt_id)
-            )
+            );
         """)
 
-        # connection.commit()
+        connection.commit()
 
     def create(self, item: Receipt) -> None:
         connection.execute("""
@@ -114,7 +114,7 @@ class ReceiptRepository:
                 VALUES(?, ?, ?, ?, ?)""",
                 (product.id, item.id, product.quantity, product.price, product.total)
             )
-        # connection.commit()
+        connection.commit()
 
 
     def add_product(self, receipt_id: str, product: Products) -> None:
@@ -128,21 +128,21 @@ class ReceiptRepository:
             UPDATE receipts SET total = total + ? WHERE receipt_id = ?""",
            (product.total, receipt_id)
         )
-        # connection.commit()
-    #
+        connection.commit()
+
     def open_receipt(self, receipt_id: str) -> None:
         connection.execute("""
             UPDATE receipts SET status = ? WHERE receipt_id = ?""",
             ("open", receipt_id)
         )
-        # connection.commit()
+        connection.commit()
 
     def close_receipt(self, receipt_id: str) -> None:
         connection.execute("""
             UPDATE receipts SET status = ? WHERE receipt_id = ?""",
             ("close", receipt_id)
         )
-        # connection.commit()
+        connection.commit()
 
     def update(self, item: Receipt) -> None:
         self.delete(item.id)
@@ -258,7 +258,7 @@ class ShiftRepository(Repository[Shift]):
                 status TEXT
             )
         """)
-        # connection.commit()
+        connection.commit()
 
         connection.execute("""
             CREATE TABLE IF NOT EXISTS shift_receipts (
@@ -267,7 +267,7 @@ class ShiftRepository(Repository[Shift]):
                 FOREIGN KEY (shift_id) REFERENCES shifts (shift_id)
             )
         """)
-        # connection.commit()
+        connection.commit()
 
     def create(self, item: Shift) -> Shift:
         connection.execute("""
@@ -275,7 +275,7 @@ class ShiftRepository(Repository[Shift]):
             VALUES(?, ?)""",
             (item.id, item.status)
         )
-        # connection.commit()
+        connection.commit()
         return item
 
     def read(self, shift_id: str) -> Optional[Shift]:
@@ -297,14 +297,14 @@ class ShiftRepository(Repository[Shift]):
             UPDATE shifts SET status = ? WHERE shift_id = ?""",
             ("open", shift_id)
         )
-        # connection.commit()
+        connection.commit()
 
     def close_shift(self, shift_id : str) -> None:
         connection.execute("""
             UPDATE shifts SET status = ? WHERE shift_id = ?""",
             ("close", shift_id)
         )
-        # connection.commit()
+        connection.commit()
 
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
         shift = self.read(shift_id)
@@ -314,7 +314,7 @@ class ShiftRepository(Repository[Shift]):
                 VALUES(?, ?)""",
                 (shift_id, receipt_id)
             )
-            # connection.commit()
+            connection.commit()
 
 @dataclass
 class ProductSqliteRepository:
@@ -328,7 +328,7 @@ class ProductSqliteRepository:
                 unit_id TEXT,
                 name TEXT,
                 barcode TEXT,
-                price INTEGER
+                price REAL
             );
             """
         )

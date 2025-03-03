@@ -51,33 +51,33 @@ class InMemoryRepository(Generic[ItemT]):
 
     def open_receipt(self, receipt_id: str) -> None:
         for item in self.items:
-            if receipt_id == item.receipt_id:
+            if receipt_id == item.id:
                 item.status = "open"
                 break
 
     def close_receipt(self, receipt_id: str) -> None:
         for item in self.items:
-            if receipt_id == item.receipt_id:
+            if receipt_id == item.id:
                 item.status = "close"
                 break
 
     def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
-        return [item for item in self.items if isinstance(item, Shift) and item.shift_id in receipt_ids]
+        return [item for item in self.items if isinstance(item, Shift) and item.id in receipt_ids]
 
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
-        shift = next((item for item in self.items if isinstance(item, Shift) and item.shift_id == shift_id), None)
+        shift = next((item for item in self.items if isinstance(item, Shift) and item.id == shift_id), None)
         return shift.receipts if shift else []
 
 
     def open_shift(self, shift_id: str) -> None:
         for item in self.items:
-            if item.shift_id == shift_id:
+            if item.id == shift_id:
                 item.status = "open"
                 break
 
     def close_shift(self, shift_id: str) -> None:
         for item in self.items:
-            if item.shift_id == shift_id:
+            if item.id == shift_id:
                 item.status = "closed"
                 break
 

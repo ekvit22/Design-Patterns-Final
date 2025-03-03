@@ -14,17 +14,17 @@ from app.services.shift_service import ShiftService
 shift_api = APIRouter()
 
 class _Infra(Protocol):
-    def shift(self) -> Repository[Shift]:
+    def shifts(self) -> Repository[Shift]:
         pass
 
 class ShiftModel(BaseModel):
-    shift_id: str
+    id: str
     status: str
     receipts: List[str]
 
 def create_shift_service(req: Request) -> ShiftService:
     infra: _Infra = req.app.state.infra
-    return ShiftService(infra.shift())
+    return ShiftService(infra.shifts())
 
 @shift_api.post(
     "/{shift_id}/create",
@@ -39,16 +39,16 @@ def create_shift(service: Annotated[ShiftService, Depends(create_shift_service)]
     status_code=200,
     response_model=None,
 )
-def open_shift(service: Annotated[ShiftService, Depends(create_shift_service)]) -> None:
-    service.open_shift()
+def open_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> None:
+    service.open_shift(id)
 
 @shift_api.post(
     "/{shift_id}/close",
     status_code=200,
     response_model=None,
 )
-def close_shift(shift_id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> None:
-    service.close_shift(shift_id)
+def close_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> None:
+    service.close_shift(id)
 
 @shift_api.post(
     "/{shift_id}/receipts/{receipt_id}",
@@ -56,7 +56,7 @@ def close_shift(shift_id: str, service: Annotated[ShiftService, Depends(create_s
     response_model=None,
 )
 def add_receipt_to_shift(
-    shift_id: str, receipt_id: str,
+    id: str, receipt_id: str,
     service: Annotated[ShiftService, Depends(create_shift_service)]
 ) -> None:
-    service.add_receipt_to_shift(shift_id, receipt_id)
+    service.add_receipt_to_shift(id, receipt_id)

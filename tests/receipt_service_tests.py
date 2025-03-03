@@ -1,8 +1,4 @@
-from app.core.constants import GEL, USD, EUR, GEL_TO_EUR, GEL_TO_USD
-from app.core.receipt import Receipt, Products
-from app.core.repository import Repository
-from app.infra.in_memory import InMemoryRepository
-from app.schemas.receipt import AddProductRequest, ChangeReceiptRequest
+from app.core.constants import GEL, USD, EUR, GEL_TO_EUR
 from app.services.receipt_service import ReceiptService
 import unittest
 from unittest.mock import Mock, patch
