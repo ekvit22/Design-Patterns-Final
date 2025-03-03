@@ -1,6 +1,6 @@
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 from app.core.product import Product
 from app.core.receipt import Receipt, Products
@@ -83,7 +83,7 @@ class ReceiptRepository:
             CREATE TABLE IF NOT EXISTS receipts (
                 receipt_id TEXT,
                 status TEXT,
-                total INTEGER,
+                total INTEGER
             )
         """)
         # connection.commit()

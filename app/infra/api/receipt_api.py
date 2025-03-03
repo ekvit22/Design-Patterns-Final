@@ -9,9 +9,11 @@ from starlette.requests import Request
 
 from app.core.repository import Repository
 from app.core.receipt import Receipt, Products
+from app.infra.api.products import create_products_service
 from app.infra.api.shift_api import create_shift_service
 from app.schemas.receipt import ChangeReceiptRequest, AddProductRequest
 from app.services.campaign_service import CampaignService
+from app.services.product_service import ProductService
 from app.services.receipt_service import ReceiptService
 from app.infra.api.campaign_api import create_campaigns_service
 from app.core.constants import GEL, USD, EUR
@@ -20,7 +22,7 @@ from app.services.shift_service import ShiftService
 receipt_api = APIRouter()
 
 class _Infra(Protocol):
-    def receipt(self) -> Repository[Receipt]:
+    def receipts(self) -> Repository[Receipt]:
         pass
 
 class ReceiptItem(BaseModel):
@@ -31,20 +33,20 @@ class ReceiptItem(BaseModel):
 
 def create_receipt_service(req: Request) -> ReceiptService:
     infra: _Infra = req.app.state.infra
-    return ReceiptService(infra.receipt())
+    return ReceiptService(infra.receipts())
 
 @receipt_api.get(
-    "",
+    "/{receipt_id}",
     status_code=200,
     response_model=ReceiptItem,
 )
-def read_receipt(rec_id: str,
+def read_receipt(receipt_id: str,
     service: Annotated[ReceiptService, Depends(create_receipt_service)],
 ) -> Receipt:
-    return service.read(rec_id)
+    return service.read(receipt_id)
 
 @receipt_api.get(
-    "/receipts/{receipt_id}/discounted_price",
+    "/{receipt_id}/discounted_price",
     status_code=200,
     response_model=int,
 )
@@ -60,7 +62,7 @@ def get_discounted_price(receipt_id: str,
     return old_total - new_total
 
 @receipt_api.post(
-    "/receipts/{receipt_id}/quotes",
+    "/{receipt_id}/quotes",
     status_code=200,
     response_model=int,
 )
@@ -71,13 +73,13 @@ def calculate_payment(receipt_id: str,
     return receipt_service.calculate_payment(receipt_id, currency)
 
 @receipt_api.post(
-    "/receipts/{receipt_id}/payments",
+    "/{receipt_id}/payments",
     status_code=200,
-    response_model=int,
+    response_model=None,
 )
 def complete_payment(receipt_id: str,
     service: Annotated[ReceiptService, Depends(create_receipt_service)]) -> None:
-    return service.close_receipt(receipt_id)
+    service.close_receipt(receipt_id)
 
 @receipt_api.post(
     "",
