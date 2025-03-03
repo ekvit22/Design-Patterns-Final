@@ -39,7 +39,6 @@ class ReceiptService:
     def close_receipt(self, receipt_id: str) -> None:
         self.repository.close_receipt(receipt_id)
 
-    # AQ MAINTERESEBS TOTALS AQ XELIT UNDA GAVZARDO TU RAGDAN SQLITESHI MIWERIA AR MIDNA VKITXO BENDOS
     def add_product(self, receipt_id: str, product: Products, request: AddProductRequest) -> Receipt:
         new_receipt: Optional[Receipt] = self.repository.read(receipt_id)
         if new_receipt is None:
@@ -50,17 +49,9 @@ class ReceiptService:
         product_total = product_price*request.quantity
         added_product = Products(request.id, request.quantity, product_price, product_total)
         new_receipt.products.append(added_product)
+        new_receipt.total += product_total
         self.repository.update(new_receipt)
         return new_receipt
-
-    # AR VIYENEB
-    def get_all(self) -> List[Receipt]:
-        items = self.repository.get_all()
-        if items is None:
-            raise HTTPException(status_code=404,
-                detail={"error":{"message":
-                                "Receipts don't exist."}})
-        return items
 
     def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
         receipts = []

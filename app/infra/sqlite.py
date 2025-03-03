@@ -154,15 +154,6 @@ class ReceiptRepository:
         cursor.execute("DELETE FROM receipt_products WHERE receipt_id = ?", (item_id,))
         connection.commit()
 
-    def get_all(self) -> List[Receipt]:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM receipts")
-        receipts = []
-        for receipt_row in cursor.fetchall():
-            products = self.get_products_from_receipt(receipt_row[0])
-            receipts.append(Receipt(id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
-        return receipts
-
     def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
         cursor = connection.cursor()
         receipts = []

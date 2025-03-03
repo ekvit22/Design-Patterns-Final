@@ -77,3 +77,70 @@ class ReceiptServiceTests(unittest.TestCase):
         mock_receipt.total = 1000000
         result = self.receipt_service.calculate_payment("1111", EUR)
         self.assertEqual(result, int(1000000 / GEL_TO_EUR))
+
+    def test_create(self):
+        expected_receipt = Receipt(id="uuid1", status="open", products=[], total=0)
+        self.mock_repository.create.return_value = expected_receipt
+
+        with patch('uuid.uuid4', return_value="uuid1"):
+            result = self.receipt_service.create()
+
+        self.assertEqual(result.id, "uuid1")
+        self.assertEqual(result.status, "open")
+        self.assertEqual(result.products, [])
+        self.assertEqual(result.total, 0)
+
+    def test_read_receipt(self):
+        expected_receipt = Receipt(id="receipt-123", status="open", products=[], total=0)
+        self.mock_repository.read.return_value = expected_receipt
+
+        result = self.receipt_service.read("receipt-123")
+
+        self.assertEqual(result, expected_receipt)
+        self.mock_repository.read.assert_called_once_with("receipt-123")
+
+    def test_open_receipt(self):
+        self.receipt_service.open_receipt("receipt-123")
+        self.mock_repository.open_receipt.assert_called_once_with("receipt-123")
+
+
+    def test_close_receipt(self):
+        self.receipt_service.close_receipt("receipt-123")
+        self.mock_repository.close_receipt.assert_called_once_with("receipt-123")
+
+    def test_add_product_to_receipt(self):
+        existing_product = Products(id="prod-1", quantity=1, price=50, total=50)
+        existing_receipt = Receipt(id="receipt-123", status="open", products=[existing_product], total=50)
+        self.mock_repository.read.return_value = existing_receipt
+
+        new_product = Products(id="prod-2", price=75, quantity=2, total=150)
+        request = AddProductRequest(id="prod-2", quantity=2)
+
+        result = self.receipt_service.add_product("receipt-123", new_product, request)
+
+        self.assertEqual(len(result.products), 2)
+        self.assertEqual(result.products[1].id, "prod-2")
+        self.assertEqual(result.products[1].quantity, 2)
+        self.assertEqual(result.products[1].price, 75)
+        self.assertEqual(result.products[1].total, 150)
+        self.assertEqual(result.total, 200)
+        self.mock_repository.update.assert_called_once()
+
+    def test_get_every_receipt(self):
+        receipt1 = Receipt(id="receipt-1", status="open", products=[], total=0)
+        receipt2 = Receipt(id="receipt-2", status="closed", products=[], total=100)
+
+        def mock_read(receipt_id):
+            if receipt_id == "receipt-1":
+                return receipt1
+            elif receipt_id == "receipt-2":
+                return receipt2
+            return None
+
+        self.mock_repository.read.side_effect = mock_read
+
+        result = self.receipt_service.get_every_receipt(["receipt-1", "receipt-2"])
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], receipt1)
+        self.assertEqual(result[1], receipt2)
