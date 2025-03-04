@@ -39,16 +39,18 @@ def create_shift(service: Annotated[ShiftService, Depends(create_shift_service)]
     status_code=200,
     response_model=None,
 )
-def open_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> None:
+def open_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> Shift:
     service.open_shift(id)
+    return service.read_shift(id)
 
 @shift_api.post(
     "/{shift_id}/close",
     status_code=200,
     response_model=None,
 )
-def close_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> None:
+def close_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> Shift:
     service.close_shift(id)
+    return service.read_shift(id)
 
 @shift_api.post(
     "/{shift_id}/receipts/{receipt_id}",
@@ -58,5 +60,6 @@ def close_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_s
 def add_receipt_to_shift(
     id: str, receipt_id: str,
     service: Annotated[ShiftService, Depends(create_shift_service)]
-) -> None:
+) -> Shift:
     service.add_receipt_to_shift(id, receipt_id)
+    return service.read_shift(id)

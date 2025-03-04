@@ -23,12 +23,15 @@ class ShiftService:
         self.repository.close_shift(shift_id)
 
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
-        shift = self.repository.read(shift_id)
-        return shift.receipts
+        # shift = self.repository.read(shift_id)
+        # return shift.receipts
         # AN ANU AR VICI MCHIRDEBA VABSHE ES FUNQCIA
-        # return self.repository.get_shift_receipt_ids(shift_id)\
+        return self.repository.get_shift_receipt_ids(shift_id)
 
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
         shift = self.repository.read(shift_id)
         if shift.status == "open":
             shift.receipts.append(receipt_id)
+
+    def read_shift(self, shift_id: str) -> Shift:
+        return self.repository.read(shift_id)
