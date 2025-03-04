@@ -281,7 +281,7 @@ class ShiftRepository(Repository[Shift]):
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
         cursor = connection.cursor()
         cursor.execute("""SELECT * FROM shift_receipts WHERE shift_id = ?""", (shift_id,))
-        return [row[0] for row in cursor.fetchall()]
+        return [row[1] for row in cursor.fetchall()]
 
     def open_shift(self, shift_id: str) -> None:
         connection.execute("""

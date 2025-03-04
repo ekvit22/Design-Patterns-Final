@@ -45,3 +45,6 @@ class Repository(Protocol[ItemT]):
 
     def read_with_barcode(self, item_barcode: str) -> Optional[ItemT]:
         pass
+
+    def add_receipt_to_shift(self, shift_id, receipt_id) -> None:
+        pass
