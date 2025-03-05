@@ -17,7 +17,8 @@ def test_should_create_unit(http: TestClient) -> None:
     assert response.status_code == 201
     assert len(response.json()) == 0
 
-    response = http.post("/campaigns", json={"name": "test", "description": "testing"}, )
+    response = http.post("/campaigns",
+                json={"name": "test", "description": "testing"}, )
 
     response = http.get("/campaigns/")
 

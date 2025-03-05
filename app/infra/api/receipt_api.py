@@ -7,16 +7,15 @@ from fastapi.params import Depends
 from pydantic import BaseModel
 from starlette.requests import Request
 
+from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
-from app.core.receipt import Receipt, Products
+from app.infra.api.campaign_api import create_campaigns_service
 from app.infra.api.products import create_products_service
 from app.infra.api.shift_api import create_shift_service
-from app.schemas.receipt import ChangeReceiptRequest, AddProductRequest
+from app.schemas.receipt import AddProductRequest, ChangeReceiptRequest
 from app.services.campaign_service import CampaignService
 from app.services.product_service import ProductService
 from app.services.receipt_service import ReceiptService
-from app.infra.api.campaign_api import create_campaigns_service
-from app.core.constants import GEL, USD, EUR
 from app.services.shift_service import ShiftService
 
 receipt_api = APIRouter()

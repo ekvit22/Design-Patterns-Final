@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
+from app.core.campaign.campaign import Campaign
 from app.core.campaign.xreport import XReport
 from app.core.product import Product
 from app.core.receipt import Receipt
 from app.core.repository import Repository
-from app.core.campaign.campaign import Campaign
 from app.core.shift import Shift
 from app.schemas.sales import SalesData
 
@@ -100,6 +100,7 @@ class InMemoryRepository(Generic[ItemT]):
                 if hasattr(item, "total"):
                     res.revenue += item.total
         return res
+
 
 
 @dataclass

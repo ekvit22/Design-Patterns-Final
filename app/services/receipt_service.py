@@ -2,11 +2,10 @@ import uuid
 from http.client import HTTPException
 from typing import List, Optional
 
+from app.core.constants import EUR, GEL_TO_EUR, GEL_TO_USD, USD
+from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
-from app.core.receipt import Receipt
-from app.core.receipt import Products
 from app.schemas.receipt import AddProductRequest
-from app.core.constants import GEL, USD, EUR, GEL_TO_USD, GEL_TO_EUR
 from app.schemas.sales import SalesData
 
 
@@ -47,7 +46,8 @@ class ReceiptService:
                                 f"Receipt with id<{receipt_id}> does not exist."}})
         product_price = product.price
         product_total = product_price*request.quantity
-        added_product = Products(request.id, request.quantity, product_price, product_total)
+        added_product = Products(request.id,
+                            request.quantity, product_price, product_total)
         new_receipt.products.append(added_product)
         new_receipt.total += product_total
         self.repository.update(new_receipt)

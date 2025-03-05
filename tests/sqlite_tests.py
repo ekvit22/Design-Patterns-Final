@@ -1,5 +1,5 @@
-from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
+from app.core.repository import Repository
 from app.infra.sqlite import Sqlite
 
 
@@ -14,6 +14,16 @@ def test_campaign_sql_memory() -> None:
     assert len(res) == 2
     assert res[0].id == campaign1.id
     assert res[1].id == campaign2.id
+
+    camp = campaigns.read(campaign1.id)
+    if camp is None:
+        raise Exception("campaign not found")
+    assert camp.id == campaign1.id
+
+    camp = campaigns.read_with_name(campaign1.name)
+    if camp is None:
+        raise Exception("campaign not found")
+    assert camp.id == campaign1.id
 
     campaigns.delete(campaign1.id)
 
