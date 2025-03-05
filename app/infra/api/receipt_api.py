@@ -9,47 +9,51 @@ from starlette.requests import Request
 
 from app.core.repository import Repository
 from app.core.receipt import Receipt, Products
+from app.infra.api.products import create_products_service
+from app.infra.api.shift_api import create_shift_service
 from app.schemas.receipt import ChangeReceiptRequest, AddProductRequest
 from app.services.campaign_service import CampaignService
+from app.services.product_service import ProductService
 from app.services.receipt_service import ReceiptService
 from app.infra.api.campaign_api import create_campaigns_service
 from app.core.constants import GEL, USD, EUR
+from app.services.shift_service import ShiftService
 
 receipt_api = APIRouter()
 
 class _Infra(Protocol):
-    def receipt(self) -> Repository[Receipt]:
+    def receipts(self) -> Repository[Receipt]:
         pass
 
-class ReceiptModel(BaseModel):
+class ReceiptItem(BaseModel):
     id: str
     status: str
     products: List[Products]
-    total: int
+    total: float
 
 def create_receipt_service(req: Request) -> ReceiptService:
     infra: _Infra = req.app.state.infra
-    return ReceiptService(infra.receipt())
+    return ReceiptService(infra.receipts())
 
 @receipt_api.get(
-    "",
+    "/{receipt_id}",
     status_code=200,
-    response_model=ReceiptModel,
+    response_model=ReceiptItem,
 )
-def read_receipt(rec_id: str,
+def read_receipt(receipt_id: str,
     service: Annotated[ReceiptService, Depends(create_receipt_service)],
 ) -> Receipt:
-    return service.read(rec_id)
+    return service.read(receipt_id)
 
 @receipt_api.get(
-    "/receipts/{receipt_id}/discounted_price",
+    "/{receipt_id}/discounted_price",
     status_code=200,
-    response_model=int,
+    response_model=float,
 )
 def get_discounted_price(receipt_id: str,
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
     campaign_service: Annotated[CampaignService, Depends(create_campaigns_service)],
-    ) -> int:
+    ) -> float:
     receipt = receipt_service.read(receipt_id)
     old_total = receipt_service.get_total(receipt)
     receipt = campaign_service.apply_campaigns(receipt)
@@ -58,29 +62,29 @@ def get_discounted_price(receipt_id: str,
     return old_total - new_total
 
 @receipt_api.post(
-    "/receipts/{receipt_id}/quotes",
+    "/{receipt_id}/quotes",
     status_code=200,
-    response_model=int,
+    response_model=float,
 )
 def calculate_payment(receipt_id: str,
     currency: str,
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
-    ) -> int:
+    ) -> float:
     return receipt_service.calculate_payment(receipt_id, currency)
 
 @receipt_api.post(
-    "/receipts/{receipt_id}/payments",
+    "/{receipt_id}/payments",
     status_code=200,
-    response_model=int,
+    response_model=None,
 )
 def complete_payment(receipt_id: str,
     service: Annotated[ReceiptService, Depends(create_receipt_service)]) -> None:
-    return service.close_receipt(receipt_id)
+    service.close_receipt(receipt_id)
 
 @receipt_api.post(
-    "/receipts",
+    "",
     status_code=201,
-    response_model=ReceiptModel,
+    response_model=ReceiptItem,
 )
 def create_receipt(
     service: Annotated[ReceiptService, Depends(create_receipt_service)],
@@ -90,7 +94,7 @@ def create_receipt(
 @receipt_api.post(
     "/{receipt_id}/products",
     status_code=200,
-    response_model=ReceiptModel,
+    response_model=ReceiptItem,
 )
 def add_product(
     receipt_id: str,
@@ -102,7 +106,7 @@ def add_product(
     return receipt_service.add_product(receipt_id, product, request)
 
 @receipt_api.patch(
-    "/receipts/{receipt_id}",
+    "/{receipt_id}",
     status_code=200,
     response_model=None,
 )
@@ -116,13 +120,15 @@ def update_receipt_status(
     else:
         service.close_receipt(receipt_id)
 
-# @receipts_api.get(
-#     "/z_report",
-#     status_code=200,
-#     response_model=Optional[ReceiptItem],
-# )
-# def read_receipts(
-#     service: Annotated[ReceiptService, Depends(create_receipts_service)],
-# ) -> list[Receipt]:
-#     return service
+@receipt_api.get(
+    "/{shift_id}/z_reports",
+    status_code=200,
+    response_model=List[ReceiptItem],
+)
+def get_z_reports(shift_id: str,
+    receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
+    shift_service: Annotated[ShiftService, Depends(create_shift_service)],
+) -> List[Receipt]:
+    receipt_ids = shift_service.get_shift_receipt_ids(shift_id)
+    return receipt_service.get_every_receipt(receipt_ids)
 
