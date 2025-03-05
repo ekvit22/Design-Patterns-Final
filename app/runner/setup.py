@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
@@ -12,7 +10,6 @@ from app.infra.api.sales import sales_api
 from app.infra.api.shift_api import shift_api
 from app.infra.api.xreport import xreport_api
 from app.infra.in_memory import InMemory
-from app.infra.sqlite import Sqlite
 
 
 def setup() -> FastAPI:

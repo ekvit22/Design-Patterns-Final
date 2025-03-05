@@ -1,8 +1,6 @@
 import uuid
-from http.client import HTTPException
 from typing import List
 
-from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.shift import Shift
 

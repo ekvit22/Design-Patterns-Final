@@ -1,13 +1,12 @@
 import uuid
-
 from typing import List
 
 from fastapi import HTTPException
 
-from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 from app.core.campaign.campaign_factory import CampaignFactory
 from app.core.receipt import Receipt
+from app.core.repository import Repository
 from app.schemas.campaign import CreateCampaignRequest
 
 
@@ -25,12 +24,13 @@ class CampaignService:
         self.repository.create(new_campaign)
         return new_campaign
 
-    def delete(self, campaign_id: str):
+    def delete(self, campaign_id: str) -> None:
         result = self.repository.read(campaign_id)
         if result is None:
             raise HTTPException(
                 status_code=404,
-                detail={"error": {"message": f"Campaign with id<{campaign_id}> does not exist."}}
+                detail={"error":
+                    {"message": f"Campaign with id<{campaign_id}> does not exist."}}
             )
         self.repository.delete(campaign_id)
 

@@ -1,18 +1,18 @@
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from app.core.product import Product
-from app.core.receipt import Receipt, Products
-from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
+from app.core.product import Product
+from app.core.receipt import Products, Receipt
+from app.core.repository import ItemT, Repository
 from app.core.shift import Shift
 from app.schemas.sales import SalesData
 
 connection = sqlite3.connect("database.db", check_same_thread=False)
 
 @dataclass
-class CampaignSqliteRepository:
+class CampaignSqliteRepository(Repository[Campaign]):
     def __post_init__(self) -> None:
         connection.execute(
             """
@@ -75,6 +75,33 @@ class CampaignSqliteRepository:
         for row in cursor.fetchall():
             res.append(Campaign(row[0], row[1], row[2]))
         return res
+
+    def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+        return
+
+    def close_receipt(self, receipt_id: str) -> None:
+        return
+
+    def open_shift(self, receipt_id: str) -> None:
+        return
+
+    def open_receipt(self, receipt_id: str) -> None:
+        return
+
+    def close_shift(self, shift_id: str) -> None:
+        return
+
+    def read_with_barcode(self, item_barcode: str) -> Optional[ItemT]:
+        return None
+
+    def get_every_receipt(self, receipt_ids: List[str]) -> List[ItemT]:
+        return []
+
+    def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+        return []
+
+    def get_products_from_receipt(self, receipt_id: str) -> List[str]:
+        return []
 
 @dataclass
 class ReceiptRepository:

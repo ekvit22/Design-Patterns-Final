@@ -6,6 +6,7 @@ from starlette.testclient import TestClient
 from app.infra.sqlite import Sqlite
 from app.runner.setup import setup
 
+
 @pytest.fixture
 def http() -> TestClient:
     return TestClient(setup())

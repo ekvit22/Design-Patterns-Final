@@ -1,16 +1,12 @@
-from typing import Protocol, Annotated
+from typing import Annotated, Protocol
 
 from fastapi import APIRouter, HTTPException
+from fastapi.params import Depends
+from starlette.requests import Request
 
 from app.core.campaign.xreport import XReport
 from app.core.repository import Repository
-from app.infra.api.shift_api import create_shift_service
-from app.infra.sqlite import Sqlite
-from app.services.receipt_service import ReceiptService
-from app.services.shift_service import ShiftService
 from app.services.xreport_service import XReportService
-from starlette.requests import Request
-from fastapi.params import Depends
 
 xreport_api = APIRouter()
 

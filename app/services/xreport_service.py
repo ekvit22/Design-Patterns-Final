@@ -1,12 +1,8 @@
 from collections import defaultdict
-from typing import Optional
 
-from app.core import repository
-from app.core.campaign.xreport import XReport
 from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.shift import Shift
-from app.infra.sqlite import ProductSqliteRepository, Sqlite
 
 
 class XReportService:

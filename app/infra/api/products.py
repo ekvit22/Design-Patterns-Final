@@ -11,7 +11,6 @@ from app.core.repository import Repository
 from app.schemas.product import CreateProductRequest, UpdateProductRequest
 from app.services.product_service import ProductService
 
-
 products_api = APIRouter()
 
 class ProductItem(BaseModel):

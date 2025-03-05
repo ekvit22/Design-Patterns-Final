@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, List, Annotated
+from typing import Annotated, List, Protocol
 
 from fastapi import APIRouter
 from fastapi.params import Depends

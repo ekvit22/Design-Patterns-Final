@@ -1,12 +1,12 @@
-from app.core.receipt import Receipt, Products
-from app.infra.in_memory import InMemoryRepository
+from app.core.receipt import Products, Receipt
+from app.infra.in_memory import InMemory
 from app.schemas.campaign import CreateCampaignRequest
 from app.services.campaign_service import CampaignService
 
 
-def test_campaign_service():
-    repository = InMemoryRepository()
-    campaign_service = CampaignService(repository)
+def test_campaign_service() -> None:
+    repository = InMemory()
+    campaign_service = CampaignService(repository.campaigns())
 
     assert campaign_service.read_campaigns() == []
 

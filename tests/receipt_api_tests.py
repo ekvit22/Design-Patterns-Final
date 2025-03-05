@@ -1,5 +1,5 @@
-from unittest.mock import ANY
 from starlette.testclient import TestClient
+
 
 def test_should_read_receipt(http: TestClient) -> None:
     response = http.post("/receipts")
