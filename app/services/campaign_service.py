@@ -45,31 +45,6 @@ class CampaignService:
 
         chain = CampaignFactory.build_chain(campaigns)
 
-
-        # first = True
-        # chain: CampaignHandler = NoneCampaignHandler()
-        # for campaign in reversed(campaigns):
-        #     if first:
-        #         first = False
-        #         if campaign.type == "discount":
-        #             chain = DiscountCampaignHandler(campaign)
-        #         elif campaign.type == "combo":
-        #             chain = ComboCampaignHandler(campaign)
-        #         elif campaign.type == "buy_n_get_n":
-        #             chain = BuyNGetNHandler(campaign)
-        #         else:
-        #             pass
-        #         continue
-        #
-        #     if campaign.type == "discount":
-        #         chain = DiscountCampaignHandler(campaign, next_handler=chain)
-        #     elif campaign.type == "combo":
-        #         chain = ComboCampaignHandler(campaign, next_handler=chain)
-        #     elif campaign.type == "buy_n_get_n":
-        #         chain = BuyNGetNHandler(campaign, next_handler=chain)
-        #     else:
-        #         pass
-
         chain.handle(receipt)
         return receipt
         

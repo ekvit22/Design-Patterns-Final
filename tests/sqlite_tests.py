@@ -15,6 +15,12 @@ def test_campaign_sql_memory() -> None:
     assert res[0].id == campaign1.id
     assert res[1].id == campaign2.id
 
+    res = campaigns.read(campaign1.id)
+    assert res.id == campaign1.id
+
+    res = campaigns.read_with_name(campaign1.name)
+    assert res.id == campaign1.id
+
     campaigns.delete(campaign1.id)
 
     res = campaigns.get_all()
