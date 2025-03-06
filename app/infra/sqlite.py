@@ -1,18 +1,22 @@
 import sqlite3
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Optional, List, Dict, Any
 
+from app.core.product import Product
+from app.core.receipt import Receipt, Products
+from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.core.repository import ItemT, Repository
 from app.core.shift import Shift
 from app.schemas.sales import SalesData
+from app.core.xreport import XReport
 
 connection = sqlite3.connect("database.db", check_same_thread=False)
 
 @dataclass
-class CampaignSqliteRepository(Repository[Campaign]):
+class CampaignSqliteRepository:
     def __post_init__(self) -> None:
         connection.execute(
             """
@@ -223,92 +227,13 @@ class ReceiptRepository(Repository[Receipt]):
     def get_sales_data(self) -> Optional[SalesData]:
         res: SalesData = SalesData(n_receipts=0, revenue=0)
         cursor = connection.cursor()
-        cursor.execute("SELECT total FROM receipts where status = ?", ("closed",))
+        cursor.execute("SELECT total FROM receipts", )
         for row in cursor.fetchall():
             res.n_receipts += 1
             res.revenue += row[0]
 
         return res
 
-    def generate_x_report(self, shift_id: str) -> Optional[Dict[str, Any]]:
-        cursor = connection.cursor()
-
-        cursor.execute("""
-            WITH ReceiptData AS (
-                SELECT 
-                    sr.shift_id,
-                    r.receipt_id,
-                    rp.product_id,
-                    SUM(rp.quantity) AS total_quantity,
-                    SUM(rp.total) AS total_revenue
-                FROM shift_receipts sr
-                JOIN receipts r ON sr.receipt_id = r.receipt_id
-                JOIN receipts_products rp ON r.receipt_id = rp.receipt_id
-                WHERE sr.shift_id = ?
-                GROUP BY sr.shift_id, rp.product_id
-            )
-
-            SELECT 
-                (SELECT COUNT(DISTINCT receipt_id) FROM ReceiptData) AS total_receipts,
-                product_id,
-                total_quantity,
-                SUM(total_revenue) AS revenue
-            FROM ReceiptData
-            GROUP BY product_id;
-        """, (shift_id,))
-
-        rows = cursor.fetchall()
-
-        if not rows:
-            return None
-
-        total_receipts = rows[0][0]
-        item_sales = {}
-        total_revenue = 0.0
-
-        for row in rows:
-            item_id, quantity, revenue = row[1], row[2], row[3]
-            item_sales[item_id] = quantity
-            total_revenue += revenue
-
-        return {
-            "shift_id": shift_id,
-            "total_receipts": total_receipts,
-            "items_sold": item_sales,
-            "revenue": {"USD": total_revenue}
-        }
-
-    def get_all(self) -> list[Receipt]:
-        cursor = connection.cursor()
-        cursor.execute("SELECT * FROM receipts")
-        receipts = []
-        for row in cursor.fetchall():
-            receipt_id = row[0]
-            products = self.get_products_from_receipt(receipt_id)
-            receipts.append(Receipt(id=row[0], status=row[1],
-                                    products=products, total=row[2]))
-        return receipts
-
-    def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
-        cursor = connection.cursor()
-        cursor.execute("""SELECT receipt_id FROM shift_receipts WHERE shift_id = ?""",
-                       (shift_id,))
-        return [row[0] for row in cursor.fetchall()]
-
-    def read_with_name(self, item_name: str) -> Optional[Receipt]:
-        return None
-
-    def read_with_barcode(self, barcode: str) -> Optional[Receipt]:
-        return None
-
-    def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
-        return None
-
-    def open_shift(self, shift_id: str) -> None:
-        return None
-
-    def close_shift(self, shift_id: str) -> None:
-        return None
 
 @dataclass
 class ShiftRepository(Repository[Shift]):
@@ -431,7 +356,7 @@ class ProductSqliteRepository(Repository[Product]):
             """
             CREATE TABLE IF NOT EXISTS products (
                 id TEXT,
-                unit_id TEXT,
+                unit TEXT,
                 name TEXT,
                 barcode TEXT,
                 price REAL
@@ -444,10 +369,10 @@ class ProductSqliteRepository(Repository[Product]):
     def create(self, item: Product) -> Product:
         connection.execute(
             """
-            Insert into products(id, unit_id, name, barcode, price)
+            Insert into products(id, unit, name, barcode, price)
              values (?, ?, ?, ?, ?)
             """,
-            (item.id, item.unit_id, item.name, item.barcode, item.price),
+            (item.id, item.unit, item.name, item.barcode, item.price),
         )
         connection.commit()
         return item
@@ -478,10 +403,10 @@ class ProductSqliteRepository(Repository[Product]):
 
         connection.execute(
             """
-            Insert into products(id, unit_id, name, barcode, price)
+            Insert into products(id, unit, name, barcode, price)
              values (?, ?, ?, ?, ?)
             """,
-            (item.id, item.unit_id, item.name, item.barcode, item.price),
+            (item.id, item.unit, item.name, item.barcode, item.price),
         )
 
         connection.commit()
@@ -526,6 +451,60 @@ class ProductSqliteRepository(Repository[Product]):
     def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
         return []
 
+@dataclass
+class XReportRepository:
+    def generate_x_report(self, shift_id: str, shift: Optional[Shift], receipt_repository: Optional[ReceiptRepository]) -> Optional[XReport]:
+        cursor = connection.cursor()
+
+        cursor.execute("""
+                    SELECT receipt_id FROM shift_receipts WHERE shift_id = ?
+                """, (shift_id,))
+
+        receipt_ids = [row[0] for row in cursor.fetchall()]
+        if not receipt_ids:
+            return None
+
+        total_receipts = len(receipt_ids)
+        items_sold: dict[str, int] = {}
+        gel_revenue = 0.0
+
+        receipt_placeholders = ','.join(['?' for _ in receipt_ids])
+
+        cursor.execute(f"""
+                    SELECT product_id, quantity, total
+                    FROM receipts_products 
+                    WHERE receipt_id IN ({receipt_placeholders})
+                """, receipt_ids)
+
+        for row in cursor.fetchall():
+            product_id, quantity, total = row[0], row[1], row[2]
+            gel_revenue += total
+
+            if product_id in items_sold:
+                items_sold[product_id] += quantity
+            else:
+                items_sold[product_id] = quantity
+
+        revenue = gel_revenue
+
+        from uuid import uuid4
+        from app.core.xreport import XReport
+        return XReport(
+            id=str(uuid4()),
+            shift_id=shift_id,
+            total_receipts=total_receipts,
+            items_sold=items_sold,
+            revenue=revenue
+        )
+
+
+
+    def create(self, item: XReport) -> XReport:
+        return item
+
+    def read(self, item_id: str) -> Optional[XReport]:
+        return None
+
 
 @dataclass
 class Sqlite:
@@ -541,6 +520,9 @@ class Sqlite:
 
     def products(self) -> Repository[Product]:
         return ProductSqliteRepository()
+
+    def xreport(self) -> Repository[XReport]:
+        return XReportRepository()
 
 
     def clear_tables(self) -> None:

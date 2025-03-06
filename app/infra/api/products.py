@@ -15,7 +15,7 @@ products_api = APIRouter()
 
 class ProductItem(BaseModel):
     id: str
-    unit_id: str
+    unit: str
     name: str
     barcode: str
     price: float
@@ -55,6 +55,19 @@ def read_product(
     return service.read(product_id)
 
 
+@products_api.patch(
+    "/{product_id}",
+    status_code=200,
+    response_model=None,
+)
+def update_product(
+        product_id: str,
+        request: UpdateProductRequest,
+        service: Annotated[ProductService, Depends(create_products_service)],
+) -> None:
+    service.update_product(product_id, request)
+
+
 @products_api.get(
     "",
     status_code=200,
@@ -64,15 +77,3 @@ def read_products(
     service: Annotated[ProductService, Depends(create_products_service)],
 ) -> List[Product]:
     return service.read_products()
-
-@products_api.patch(
-    "/{product_id}",
-    status_code=200,
-    response_model=None,
-)
-def update_product(
-    product_id: str,
-    request: UpdateProductRequest,
-    service: Annotated[ProductService, Depends(create_products_service)],
-) -> None:
-    service.update_product(product_id, request)
