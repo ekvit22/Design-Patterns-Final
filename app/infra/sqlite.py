@@ -278,6 +278,38 @@ class ReceiptRepository(Repository[Receipt]):
             "revenue": {"USD": total_revenue}
         }
 
+    def get_all(self) -> list[Receipt]:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM receipts")
+        receipts = []
+        for row in cursor.fetchall():
+            receipt_id = row[0]
+            products = self.get_products_from_receipt(receipt_id)
+            receipts.append(Receipt(id=row[0], status=row[1],
+                                    products=products, total=row[2]))
+        return receipts
+
+    def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+        cursor = connection.cursor()
+        cursor.execute("""SELECT receipt_id FROM shift_receipts WHERE shift_id = ?""",
+                       (shift_id,))
+        return [row[0] for row in cursor.fetchall()]
+
+    def read_with_name(self, item_name: str) -> Optional[Receipt]:
+        return None
+
+    def read_with_barcode(self, barcode: str) -> Optional[Receipt]:
+        return None
+
+    def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+        return None
+
+    def open_shift(self, shift_id: str) -> None:
+        return None
+
+    def close_shift(self, shift_id: str) -> None:
+        return None
+
 @dataclass
 class ShiftRepository(Repository[Shift]):
     def __post_init__(self) -> None:
@@ -350,7 +382,7 @@ class ShiftRepository(Repository[Shift]):
         return None
 
 @dataclass
-class ProductSqliteRepository:
+class ProductSqliteRepository(Repository[Product]):
 
     def __post_init__(self) -> None:
 

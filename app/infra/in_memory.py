@@ -6,7 +6,7 @@ from typing import Any, Generic, List, Optional, Protocol, TypeVar
 from app.core.campaign.campaign import Campaign
 from app.core.campaign.xreport import XReport
 from app.core.product import Product
-from app.core.receipt import Receipt
+from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
 from app.core.shift import Shift
 from app.schemas.sales import SalesData
@@ -59,8 +59,8 @@ class InMemoryRepository(Generic[ItemT]):
                 item.status = "close"
                 break
 
-    def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
-        return [item for item in self.items if isinstance(item, Receipt)
+    def get_every_receipt(self, receipt_ids: List[str]) -> List[ItemT]:
+        return [item for item in self.items if isinstance(item, Receipt) # type: ignore
                 and item.id in receipt_ids]
 
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
@@ -102,6 +102,13 @@ class InMemoryRepository(Generic[ItemT]):
                 if hasattr(item, "total"):
                     res.revenue += item.total
         return res
+
+    def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
+        receipt = next((item for item in self.items if hasattr(item, "id")
+                        and item.id == receipt_id), None)
+        if receipt and hasattr(receipt, "products"):
+            return receipt.products # type: ignore
+        return []
 
 @dataclass
 class InMemory:
