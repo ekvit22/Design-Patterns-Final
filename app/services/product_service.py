@@ -36,8 +36,6 @@ class ProductService:
             )
         return product
 
-    def read_products(self) -> List[Product]:
-        return self.repository.get_all()
 
     def update_product(self,product_id: str, request: UpdateProductRequest) -> None:
         new_product = self.repository.read(product_id)
@@ -49,3 +47,7 @@ class ProductService:
             )
         new_product.price = request.price
         self.repository.update(new_product)
+
+
+    def read_products(self) -> List[Product]:
+        return self.repository.get_all()

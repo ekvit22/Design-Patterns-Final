@@ -3,13 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Generic, List, Optional, Protocol, TypeVar
 
-from app.core.campaign.xreport import XReport
+from fastapi import HTTPException
 from app.core.product import Product
 from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 from app.core.shift import Shift
 from app.schemas.sales import SalesData
+from app.core.xreport import XReport
 
 
 class _Item(Protocol):
@@ -95,11 +96,45 @@ class InMemoryRepository(Generic[ItemT]):
     def get_sales_data(self) -> Optional[SalesData]:
         res: SalesData = SalesData(n_receipts=0, revenue=0)
         for item in self.items:
-            if hasattr(item, "status") and item.status == "closed":
-                res.n_receipts += 1
-                if hasattr(item, "total"):
-                    res.revenue += item.total
+            res.n_receipts += 1
+            if hasattr(item, "total"):
+                res.revenue += item.total
         return res
+
+    def generate_x_report(self, shift_id: str, shift: Shift, receipt_repository: Repository[Receipt]) -> Optional[XReport]:
+        if not shift:
+            return None
+
+        receipt_ids = shift.receipts
+        if not receipt_ids:
+            return None
+
+        total_receipts = len(receipt_ids)
+        items_sold: dict[str, int] = {}
+        revenue = 0.0
+
+        for receipt_id in receipt_ids:
+            receipt = receipt_repository.read(receipt_id)
+            if receipt:
+                revenue += receipt.total
+
+                for product in receipt.products:
+                    if product.id in items_sold:
+                        items_sold[product.id] += product.quantity
+                    else:
+                        items_sold[product.id] = product.quantity
+
+
+        from uuid import uuid4
+        from app.core.xreport import XReport
+        return XReport(
+            id=str(uuid4()),
+            shift_id=shift_id,
+            total_receipts=total_receipts,
+            items_sold=items_sold,
+            revenue=revenue
+        )
+
 
 
 @dataclass

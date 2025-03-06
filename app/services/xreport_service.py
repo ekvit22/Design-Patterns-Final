@@ -1,39 +1,33 @@
-from collections import defaultdict
 from typing import Optional
 
-from app.core import repository
-from app.core.campaign.xreport import XReport
 from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.shift import Shift
-from app.infra.sqlite import ProductSqliteRepository, Sqlite
+from fastapi import HTTPException
+
+from app.core.xreport import XReport
 
 
 class XReportService:
-    def __init__(self, shift_repo: Repository[Shift], receipt_repo: Repository[Receipt]):
-        self.shift_repo = shift_repo
-        self.receipt_repo = receipt_repo
+    def __init__(self, repository: Repository[XReport], shift_repository: Repository[Shift], receipt_repository: Repository[Receipt]):
+        self.repository = repository
+        self.shift_repository = shift_repository
+        self.receipt_repository = receipt_repository
 
-    def generate_x_report(self, shift_id: str):
-        receipt_ids = self.shift_repo.get_shift_receipt_ids(shift_id)
+    def generate_x_report(self, shift_id: str, shift: Optional[Shift], receipt_repository: Optional[Repository[Receipt]]) -> XReport:
+        shift = self.shift_repository.read(shift_id)
+        if not shift:
+            raise HTTPException(
+                status_code=404,
+                detail={"error": {"message": f"Shift with id<{shift_id}> does not exist. fuck"}}
+            )
 
-        if not receipt_ids:
-            return None
+        report = self.repository.generate_x_report(shift_id, shift, self.receipt_repository)
+        if not report:
+            raise HTTPException(
+                status_code=404,
+                detail={"error": {
+                    "message": f"Could not generate X-report for shift<{shift_id}>. The shift may not have any receipts. esaaa?"}}
+            )
 
-        receipts = self.receipt_repo.get_every_receipt(receipt_ids)
-
-        total_receipts = len(receipts)
-        item_sales = defaultdict(float)
-        revenue_by_currency = defaultdict(float)
-
-        for receipt in receipts:
-            for item in receipt.products:
-                item_sales[item.id] += item.quantity
-                revenue_by_currency["USD"] += item.quantity * item.price
-
-        return {
-            "shift_id": shift_id,
-            "total_receipts": total_receipts,
-            "items_sold": item_sales,
-            "revenue": revenue_by_currency,
-        }
+        return report

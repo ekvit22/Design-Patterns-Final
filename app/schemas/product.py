@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class CreateProductRequest(BaseModel):
-    unit_id: str
+    unit: str
     name: str
     barcode: str
     price: float
