@@ -3,10 +3,10 @@
 for campain descriptions the style looks like this:
 
     for discounts:
-        product_id;discount_type
+        campaign_type;product_id;discount
     
     for combos:
-        product1|product2|...;discount_type
+        campaign_type;product1|product2|...;discount
     
     for buyngetn:
-        product_id;gift_id;gift_required_count
+        campaign_type;product_id;gift_id;gift_required_count
