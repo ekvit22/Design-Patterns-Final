@@ -1,8 +1,10 @@
 import uuid
-from http.client import HTTPException
 from typing import List, Optional
 
+from fastapi import HTTPException
+
 from app.core.constants import EUR, GEL_TO_EUR, GEL_TO_USD, USD
+from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
 from app.schemas.receipt import AddProductRequest
@@ -29,7 +31,7 @@ class ReceiptService:
         return receipt
 
     #getter
-    def get_total(self, receipt: Receipt) -> int:
+    def get_total(self, receipt: Receipt) -> float:
         return receipt.total
 
     def open_receipt(self, receipt_id: str) -> None:
@@ -38,7 +40,8 @@ class ReceiptService:
     def close_receipt(self, receipt_id: str) -> None:
         self.repository.close_receipt(receipt_id)
 
-    def add_product(self, receipt_id: str, product: Products, request: AddProductRequest) -> Receipt:
+    def add_product(self, receipt_id: str, product: Product,
+                    request: AddProductRequest) -> Receipt:
         new_receipt: Optional[Receipt] = self.repository.read(receipt_id)
         if new_receipt is None:
             raise HTTPException(status_code=404,
@@ -53,7 +56,7 @@ class ReceiptService:
         self.repository.update(new_receipt)
         return new_receipt
 
-    def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
+    def get_every_receipt(self, receipt_ids: List[str]) -> List[Optional[Receipt]]:
         receipts = []
         for receipt_id in receipt_ids:
             receipt = self.repository.read(receipt_id)
@@ -62,17 +65,20 @@ class ReceiptService:
 
     def calculate_payment(self, receipt_id: str, currency: str) -> float:
         receipt = self.repository.read(receipt_id)
-        total = receipt.total
+        if receipt is None:
+            raise ValueError(f"Receipt with ID {receipt_id} not found")
+        else:
+            total = receipt.total
 
         if currency == USD:
-            return self.change_currency(total, GEL_TO_USD)
+            return round(self.change_currency(total, GEL_TO_USD), 2)
         elif currency == EUR:
-            return self.change_currency(total, GEL_TO_EUR)
+            return round(self.change_currency(total, GEL_TO_EUR), 2)
 
-        return total
+        return round(total, 2)
 
     def change_currency(self, total: float, exchange_rate: float) -> float:
-        return total / exchange_rate
+        return round(total / exchange_rate, 3)
 
     def get_sales_data(self) -> SalesData:
         res: Optional[SalesData] = self.repository.get_sales_data()

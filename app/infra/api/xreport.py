@@ -1,17 +1,21 @@
-from typing import Annotated, Protocol
+from typing import Annotated, Any, Dict, Protocol
 
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 from starlette.requests import Request
 
-from app.core.campaign.xreport import XReport
+from app.core.receipt import Receipt
 from app.core.repository import Repository
+from app.core.shift import Shift
 from app.services.xreport_service import XReportService
 
 xreport_api = APIRouter()
 
 class _Infra(Protocol):
-    def shift(self) -> Repository[XReport]:
+    def shifts(self) -> Repository[Shift]:
+        pass
+
+    def receipts(self) -> Repository[Receipt]:
         pass
 
 def create_x_report_service(
@@ -25,10 +29,11 @@ def create_x_report_service(
 def get_x_report(
     shift_id: str,
     service: Annotated[XReportService, Depends(create_x_report_service)],
-):
+) -> Dict[str, Any]:
     report = service.generate_x_report(shift_id)
 
     if not report:
-        raise HTTPException(status_code=404, detail=f"Shift with ID {shift_id} not found")
+        raise HTTPException(status_code=404,
+                            detail=f"Shift with ID {shift_id} not found")
 
     return report

@@ -1,5 +1,8 @@
 from typing import List, Optional, Protocol, TypeVar
 
+from app.core.receipt import Products
+from app.schemas.sales import SalesData
+
 ItemT = TypeVar("ItemT")
 
 
@@ -40,11 +43,14 @@ class Repository(Protocol[ItemT]):
     def close_shift(self, shift_id : str) -> None:
         pass
 
-    def get_products_from_receipt(self, receipt_id: str) -> List[str]:
+    def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
         pass
 
     def read_with_barcode(self, item_barcode: str) -> Optional[ItemT]:
         pass
 
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+        pass
+
+    def get_sales_data(self) -> Optional[SalesData]:
         pass

@@ -8,7 +8,8 @@ from app.core.receipt import Receipt
 
 
 class CampaignHandler(ABC):
-    def __init__(self, campaign: Campaign, next_handler:Optional[CampaignHandler] = None) -> None:
+    def __init__(self, campaign: Campaign,
+                 next_handler:Optional[CampaignHandler] = None) -> None:
         self.next_handler = next_handler
         self.campaign_type, *self.campaign_data = campaign.description.split(";")
 

@@ -100,11 +100,14 @@ class CampaignSqliteRepository(Repository[Campaign]):
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
         return []
 
-    def get_products_from_receipt(self, receipt_id: str) -> List[str]:
+    def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
         return []
 
+    def get_sales_data(self) -> Optional[SalesData]:
+        return None
+
 @dataclass
-class ReceiptRepository:
+class ReceiptRepository(Repository[Receipt]):
     def __post_init__(self) -> None:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS receipts (
@@ -128,7 +131,7 @@ class ReceiptRepository:
 
         connection.commit()
 
-    def create(self, item: Receipt) -> None:
+    def create(self, item: Receipt) -> Receipt:
         connection.execute("""
             INSERT INTO receipts(receipt_id, status, total)
             VALUES(?, ?, ?)""",
@@ -137,16 +140,19 @@ class ReceiptRepository:
 
         for product in item.products:
             connection.execute("""
-                INSERT INTO receipts_products(product_id, receipt_id, quantity, price, total)
+                INSERT INTO receipts_products(product_id, receipt_id,
+                 quantity, price, total)
                 VALUES(?, ?, ?, ?, ?)""",
                 (product.id, item.id, product.quantity, product.price, product.total)
             )
         connection.commit()
+        return item
 
 
     def add_product(self, receipt_id: str, product: Products) -> None:
         connection.execute("""
-            INSERT INTO receipts_products(product_id, receipt_id, quantity, price, total)
+            INSERT INTO receipts_products(product_id, receipt_id,
+             quantity, price, total)
             VALUES(?, ?, ?, ?, ?)""",
             (product.id, receipt_id, product.quantity, product.price, product.total)
         )
@@ -189,14 +195,18 @@ class ReceiptRepository:
             receipt_row = cursor.fetchone()
             if receipt_row is not None:
                 products = self.get_products_from_receipt(receipt_row[0])
-                receipts.append(Receipt(id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2]))
+                receipts.append(Receipt(id=receipt_row[0], status=receipt_row[1],
+                                        products=products, total=receipt_row[2]))
         return receipts
 
     def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
         cursor = connection.cursor()
-        cursor.execute("""SELECT * FROM receipts_products WHERE receipt_id = ?""", (receipt_id,))
+        cursor.execute("""SELECT * FROM receipts_products WHERE receipt_id = ?""",
+                       (receipt_id,))
         product_rows = cursor.fetchall()
-        products = [Products(id=product_row[0], quantity=product_row[2], price=product_row[3], total=product_row[4]) for product_row in product_rows]
+        products = [Products(id=product_row[0], quantity=product_row[2],
+                             price=product_row[3], total=product_row[4])
+                    for product_row in product_rows]
         return products
 
     def read(self, receipt_id: str) -> Optional[Receipt]:
@@ -206,7 +216,8 @@ class ReceiptRepository:
         if receipt_row is  None:
             return None
         products = self.get_products_from_receipt(receipt_id)
-        result = Receipt(id=receipt_row[0], status=receipt_row[1], products=products, total=receipt_row[2])
+        result = Receipt(id=receipt_row[0], status=receipt_row[1], products=products,
+                         total=receipt_row[2])
         return result
 
     def get_sales_data(self) -> Optional[SalesData]:
@@ -219,7 +230,7 @@ class ReceiptRepository:
 
         return res
 
-    def generate_x_report(self, shift_id: str) -> Dict[str, Any]:
+    def generate_x_report(self, shift_id: str) -> Optional[Dict[str, Any]]:
         cursor = connection.cursor()
 
         cursor.execute("""
@@ -303,11 +314,12 @@ class ShiftRepository(Repository[Shift]):
         if shift_row is None:
             return None
         receipts = self.get_shift_receipt_ids(shift_id)
-        return Shift(shift_id=shift_row[0], status=shift_row[1], receipts=receipts)
+        return Shift(id=shift_row[0], status=shift_row[1], receipts=receipts)
 
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
         cursor = connection.cursor()
-        cursor.execute("""SELECT * FROM shift_receipts WHERE shift_id = ?""", (shift_id,))
+        cursor.execute("""SELECT * FROM shift_receipts WHERE shift_id = ?""",
+                       (shift_id,))
         return [row[1] for row in cursor.fetchall()]
 
     def open_shift(self, shift_id: str) -> None:
@@ -326,13 +338,16 @@ class ShiftRepository(Repository[Shift]):
 
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
         shift = self.read(shift_id)
-        if shift.status == "open":
+        if shift is not None and shift.status == "open":
             connection.execute("""
                 INSERT INTO shift_receipts(shift_id, receipt_id)
                 VALUES(?, ?)""",
                 (shift_id, receipt_id)
             )
             connection.commit()
+
+    def get_sales_data(self) -> Optional[SalesData]:
+        return None
 
 @dataclass
 class ProductSqliteRepository:
@@ -409,6 +424,9 @@ class ProductSqliteRepository:
 
 
     def delete(self, item_id: str) -> None:
+        return None
+
+    def get_sales_data(self) -> Optional[SalesData]:
         return None
 
 

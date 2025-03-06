@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, List, Protocol
+from typing import Annotated, List, Optional, Protocol
 
 from fastapi import APIRouter
 from fastapi.params import Depends
@@ -31,7 +31,8 @@ def create_shift_service(req: Request) -> ShiftService:
     status_code=201,
     response_model=ShiftModel,
 )
-def create_shift(service: Annotated[ShiftService, Depends(create_shift_service)]) -> Shift:
+def create_shift(service: Annotated[ShiftService,
+    Depends(create_shift_service)]) -> Shift:
     return service.create()
 
 @shift_api.post(
@@ -39,7 +40,8 @@ def create_shift(service: Annotated[ShiftService, Depends(create_shift_service)]
     status_code=200,
     response_model=None,
 )
-def open_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> Shift:
+def open_shift(id: str, service: Annotated[ShiftService,
+            Depends(create_shift_service)]) -> Optional[Shift]:
     service.open_shift(id)
     return service.read_shift(id)
 
@@ -48,7 +50,8 @@ def open_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_se
     status_code=200,
     response_model=None,
 )
-def close_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_service)]) -> Shift:
+def close_shift(id: str, service: Annotated[ShiftService,
+            Depends(create_shift_service)]) -> Optional[Shift]:
     service.close_shift(id)
     return service.read_shift(id)
 
@@ -60,6 +63,6 @@ def close_shift(id: str, service: Annotated[ShiftService, Depends(create_shift_s
 def add_receipt_to_shift(
     id: str, receipt_id: str,
     service: Annotated[ShiftService, Depends(create_shift_service)]
-) -> Shift:
+) -> Optional[Shift]:
     service.add_receipt_to_shift(id, receipt_id)
     return service.read_shift(id)

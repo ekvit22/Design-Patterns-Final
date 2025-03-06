@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Generic, List, Optional, Protocol, TypeVar
+from typing import Any, Generic, List, Optional, Protocol, TypeVar
 
 from app.core.campaign.campaign import Campaign
 from app.core.campaign.xreport import XReport
@@ -15,7 +15,6 @@ from app.schemas.sales import SalesData
 class _Item(Protocol):
     id: str
 
-
 ItemT = TypeVar("ItemT", bound=_Item)
 
 @dataclass
@@ -24,7 +23,6 @@ class InMemoryRepository(Generic[ItemT]):
 
     def create(self, item: ItemT) -> ItemT:
         self.items.append(item)
-
         return item
 
     def read(self, item_id: str) -> Optional[ItemT]:
@@ -51,39 +49,43 @@ class InMemoryRepository(Generic[ItemT]):
 
     def open_receipt(self, receipt_id: str) -> None:
         for item in self.items:
-            if receipt_id == item.id:
+            if hasattr(item, "status") and receipt_id == item.id:
                 item.status = "open"
                 break
 
     def close_receipt(self, receipt_id: str) -> None:
         for item in self.items:
-            if receipt_id == item.id:
+            if hasattr(item, "status") and receipt_id == item.id:
                 item.status = "close"
                 break
 
     def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
-        return [item for item in self.items if isinstance(item, Shift) and item.id in receipt_ids]
+        return [item for item in self.items if isinstance(item, Receipt)
+                and item.id in receipt_ids]
 
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
-        shift = next((item for item in self.items if isinstance(item, Shift) and item.id == shift_id), None)
+        shift = next((item for item in self.items if isinstance(item, Shift)
+                      and item.id == shift_id), None)
         return shift.receipts if shift else []
 
 
     def open_shift(self, shift_id: str) -> None:
         for item in self.items:
-            if item.id == shift_id:
+            if hasattr(item, "status") and item.id == shift_id:
                 item.status = "open"
                 break
 
     def close_shift(self, shift_id: str) -> None:
         for item in self.items:
-            if item.id == shift_id:
+            if hasattr(item, "status") and item.id == shift_id:
                 item.status = "closed"
                 break
 
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
         shift = self.read(shift_id)
-        if shift.status == "open":
+        if (shift is not None and hasattr(shift, "status")
+                and hasattr(shift, "receipts")
+                and shift.status == "open"):
             shift.receipts.append(receipt_id)
 
     def read_with_barcode(self, barcode: str) -> Optional[ItemT]:
@@ -101,33 +103,31 @@ class InMemoryRepository(Generic[ItemT]):
                     res.revenue += item.total
         return res
 
-
-
 @dataclass
 class InMemory:
     _campaigns: InMemoryRepository[Campaign] = field(
         init=False,
-        default_factory=InMemoryRepository,
+        default_factory=lambda: InMemoryRepository[Campaign](),
     )
 
     _receipts: InMemoryRepository[Receipt] = field(
         init=False,
-        default_factory=InMemoryRepository,
+        default_factory=lambda: InMemoryRepository[Receipt](),
     )
 
     _shifts: InMemoryRepository[Shift] = field(
         init=False,
-        default_factory=InMemoryRepository
+        default_factory=lambda: InMemoryRepository[Shift](),
     )
 
     _products: InMemoryRepository[Product] = field(
         init=False,
-        default_factory=InMemoryRepository,
+        default_factory=lambda: InMemoryRepository[Product](),
     )
 
-    _xreport: InMemoryRepository[XReport] = field(
+    _xreport: InMemoryRepository[Any] = field(
         init=False,
-        default_factory=InMemoryRepository,
+        default_factory=lambda: InMemoryRepository[Any](),
     )
 
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Annotated, List, Protocol
+from typing import Annotated, List, Optional, Protocol
 
 from fastapi import APIRouter
 from fastapi.params import Depends
 from pydantic import BaseModel
 from starlette.requests import Request
 
+from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
 from app.infra.api.campaign_api import create_campaigns_service
@@ -101,7 +102,7 @@ def add_product(
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
     product_service: Annotated[ProductService, Depends(create_products_service)],
 ) -> Receipt:
-    product: Products = product_service.read(request.id)
+    product: Product = product_service.read(request.id)
     return receipt_service.add_product(receipt_id, product, request)
 
 @receipt_api.patch(
@@ -127,7 +128,7 @@ def update_receipt_status(
 def get_z_reports(shift_id: str,
     receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
     shift_service: Annotated[ShiftService, Depends(create_shift_service)],
-) -> List[Receipt]:
+) -> List[Optional[Receipt]]:
     receipt_ids = shift_service.get_shift_receipt_ids(shift_id)
     return receipt_service.get_every_receipt(receipt_ids)
 

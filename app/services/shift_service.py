@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import List, Optional
 
 from app.core.repository import Repository
 from app.core.shift import Shift
@@ -14,10 +14,10 @@ class ShiftService:
         self.repository.create(new_receipt)
         return new_receipt
 
-    def open_shift(self, shift_id) -> None:
+    def open_shift(self, shift_id: str) -> None:
         self.repository.open_shift(shift_id)
 
-    def close_shift(self, shift_id) -> None:
+    def close_shift(self, shift_id: str) -> None:
         self.repository.close_shift(shift_id)
 
     def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
@@ -26,5 +26,5 @@ class ShiftService:
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
         self.repository.add_receipt_to_shift(shift_id, receipt_id)
 
-    def read_shift(self, shift_id: str) -> Shift:
+    def read_shift(self, shift_id: str) -> Optional[Shift]:
         return self.repository.read(shift_id)
