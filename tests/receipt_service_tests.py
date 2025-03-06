@@ -92,41 +92,53 @@ class ReceiptServiceTests(unittest.TestCase):
         self.assertEqual(result.total, 0)
 
     def test_read_receipt(self) -> None:
-        expected_receipt = Receipt(id="receipt-123", status="open",
+        expected_receipt = Receipt(id="receipt-1", status="open",
                                    products=[], total=0)
         self.mock_repository.read.return_value = expected_receipt
 
-        result = self.receipt_service.read("receipt-123")
+        result = self.receipt_service.read("receipt-1")
 
         self.assertEqual(result, expected_receipt)
-        self.mock_repository.read.assert_called_once_with("receipt-123")
+        self.mock_repository.read.assert_called_once_with("receipt-1")
 
     def test_open_receipt(self) -> None:
-        self.receipt_service.open_receipt("receipt-123")
-        self.mock_repository.open_receipt.assert_called_once_with("receipt-123")
+        mock_receipt = Receipt(id="receipt-1", status="closed", products=[], total=0)
+        self.mock_repository.read.return_value = mock_receipt
+        self.receipt_service.open_receipt("receipt-1")
+        self.mock_repository.open_receipt.assert_called_once_with("receipt-1")
+        mock_receipt.status = "open"
+        self.mock_repository.read.return_value = mock_receipt
+        result = self.receipt_service.read("receipt-1")
+        self.assertEqual(result.status, "open")
 
     def test_close_receipt(self) -> None:
-        self.receipt_service.close_receipt("receipt-123")
-        self.mock_repository.close_receipt.assert_called_once_with("receipt-123")
+        mock_receipt = Receipt(id="receipt-1", status="open", products=[], total=0)
+        self.mock_repository.read.return_value = mock_receipt
+        self.receipt_service.close_receipt("receipt-1")
+        self.mock_repository.close_receipt.assert_called_once_with("receipt-1")
+        mock_receipt.status = "closed"
+        self.mock_repository.read.return_value = mock_receipt
+        result = self.receipt_service.read("receipt-1")
+        self.assertEqual(result.status, "closed")
 
     def test_add_product_to_receipt(self) -> None:
-        existing_product = Products(id="prod-1", quantity=1, price=50, total=50)
-        existing_receipt = Receipt(id="receipt-123", status="open",
-                                   products=[existing_product], total=50)
+        existing_product = Products(id="prod-1", quantity=2, price=50, total=100)
+        existing_receipt = Receipt(id="receipt-1", status="open",
+                                   products=[existing_product], total=100)
         self.mock_repository.read.return_value = existing_receipt
 
-        new_product = Product(id="prod-2", unit_id="1234", name="prod2",
-                              price=75, barcode="12345")
+        new_product = Product(id="prod-2", unit_id="2", name="prod2",
+                              price=75, barcode="12")
         request = AddProductRequest(id="prod-2", quantity=2)
 
-        result = self.receipt_service.add_product("receipt-123", new_product, request)
+        result = self.receipt_service.add_product("receipt-1", new_product, request)
 
         self.assertEqual(len(result.products), 2)
         self.assertEqual(result.products[1].id, "prod-2")
         self.assertEqual(result.products[1].quantity, 2)
         self.assertEqual(result.products[1].price, 75)
         self.assertEqual(result.products[1].total, 150)
-        self.assertEqual(result.total, 200)
+        self.assertEqual(result.total, 250)
         self.mock_repository.update.assert_called_once()
 
     def test_get_every_receipt(self) -> None:

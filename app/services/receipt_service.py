@@ -88,4 +88,3 @@ class ReceiptService:
                                                       "Something went wrong"}}
                                 )
         return SalesData(n_receipts=res.n_receipts, revenue=res.revenue)
-

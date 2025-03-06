@@ -27,7 +27,7 @@ def create_shift_service(req: Request) -> ShiftService:
     return ShiftService(infra.shifts())
 
 @shift_api.post(
-    "/{shift_id}/create",
+    "",
     status_code=201,
     response_model=ShiftModel,
 )
@@ -36,7 +36,7 @@ def create_shift(service: Annotated[ShiftService,
     return service.create()
 
 @shift_api.post(
-    "",
+    "/{shift_id}/open",
     status_code=200,
     response_model=None,
 )
