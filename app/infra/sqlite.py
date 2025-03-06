@@ -381,6 +381,47 @@ class ShiftRepository(Repository[Shift]):
     def get_sales_data(self) -> Optional[SalesData]:
         return None
 
+    def update(self, item: Shift) -> None:
+        connection.execute("""
+            UPDATE shifts SET status = ? WHERE shift_id = ?""",
+                           (item.status, item.id)
+                           )
+        connection.commit()
+
+    def delete(self, item_id: str) -> None:
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM shifts WHERE shift_id = ?", (item_id,))
+        cursor.execute("DELETE FROM shift_receipts WHERE shift_id = ?", (item_id,))
+        connection.commit()
+
+    def close_receipt(self, receipt_id: str) -> None:
+        return None
+
+    def open_receipt(self, receipt_id: str) -> None:
+        return None
+
+    def read_with_name(self, item_name: str) -> Optional[Shift]:
+        return None
+
+    def read_with_barcode(self, item_barcode: str) -> Optional[Shift]:
+        return None
+
+    def get_every_receipt(self, receipt_ids: List[str]) -> List[Shift]:
+        return []
+
+    def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
+        return []
+
+    def get_all(self) -> List[Shift]:
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM shifts")
+        shifts = []
+        for shift_row in cursor.fetchall():
+            shift_id = shift_row[0]
+            receipts = self.get_shift_receipt_ids(shift_id)
+            shifts.append(Shift(id=shift_id, status=shift_row[1], receipts=receipts))
+        return shifts
+
 @dataclass
 class ProductSqliteRepository(Repository[Product]):
 
@@ -460,6 +501,30 @@ class ProductSqliteRepository(Repository[Product]):
 
     def get_sales_data(self) -> Optional[SalesData]:
         return None
+
+    def open_receipt(self, receipt_id: str) -> None:
+        return None
+
+    def close_receipt(self, receipt_id: str) -> None:
+        return None
+
+    def get_every_receipt(self, receipt_ids: List[str]) -> List[Product]:
+        return []
+
+    def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+        return []
+
+    def open_shift(self, shift_id: str) -> None:
+        return None
+
+    def close_shift(self, shift_id: str) -> None:
+        return None
+
+    def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+        return None
+
+    def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
+        return []
 
 
 @dataclass
