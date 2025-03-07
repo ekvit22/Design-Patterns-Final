@@ -1,6 +1,7 @@
 # Design-Patterns-Final
+HTTP API for Point of Sales (POS) system using Chain of Responsibility pattern.
 
-use this format for campaign descriptions:
+Use this format for campaign descriptions:
 
     for discounts:
         discount;product_id;discount_percentage
