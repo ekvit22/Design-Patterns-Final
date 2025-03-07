@@ -1,3 +1,4 @@
+import uuid
 from typing import List, Optional
 
 from app.core.campaign.campaign import Campaign
@@ -8,6 +9,8 @@ from app.core.shift import Shift
 from app.core.xreport import XReport
 from app.infra.sqlite import Sqlite
 from app.schemas.sales import SalesData
+from app.services.receipt_service import ReceiptService
+
 
 
 def test_campaign_sql_memory() -> None:
@@ -254,3 +257,192 @@ def test_get_products_from_receipt() -> None:
     assert len(products) == 2
     assert products[0].id == "product-1"
     assert products[1].total == 90.0
+
+def test_sales_data_from_receipts() -> None:
+    sqlite = Sqlite()
+    sqlite.clear_tables()
+
+    receipt_repo = sqlite.receipts()
+
+    receipt1_id = str(uuid.uuid4())
+    receipt1 = Receipt(
+        id=receipt1_id,
+        status="close",
+        products=[
+            Products(id="p1", quantity=2, price=10.0, total=20.0),
+            Products(id="p2", quantity=1, price=15.0, total=15.0)
+        ],
+        total=35.0
+    )
+
+    receipt2_id = str(uuid.uuid4())
+    receipt2 = Receipt(
+        id=receipt2_id,
+        status="close",
+        products=[
+            Products(id="p1", quantity=1, price=10.0, total=10.0),
+            Products(id="p3", quantity=3, price=20.0, total=60.0)
+        ],
+        total=70.0
+    )
+
+    receipt_repo.create(receipt1)
+    receipt_repo.create(receipt2)
+
+    sales_data = receipt_repo.get_sales_data()
+    assert sales_data is not None
+    assert sales_data.n_receipts == 2
+    assert sales_data.revenue == 105.0
+
+
+def test_receipt_service_sales_data() -> None:
+    sqlite = Sqlite()
+    sqlite.clear_tables()
+
+    receipt_repo = sqlite.receipts()
+    receipt_service = ReceiptService(receipt_repo)
+
+    receipt1 = Receipt(id=str(uuid.uuid4()), status="close", products=[], total=25.5)
+    receipt2 = Receipt(id=str(uuid.uuid4()), status="close", products=[], total=42.75)
+    receipt3 = Receipt(id=str(uuid.uuid4()), status="close", products=[], total=100.0)
+
+    receipt_repo.create(receipt1)
+    receipt_repo.create(receipt2)
+    receipt_repo.create(receipt3)
+
+    sales_data = receipt_service.get_sales_data()
+
+    assert sales_data.n_receipts == 3
+    assert sales_data.revenue == 168.25
+
+
+def test_sales_data_with_product_additions() -> None:
+    sqlite = Sqlite()
+    sqlite.clear_tables()
+
+    receipt_repo = sqlite.receipts()
+    product_repo = sqlite.products()
+    receipt_service = ReceiptService(receipt_repo)
+
+    product1 = Product("p1", "unit", "Product 1", "1111", 10.0)
+    product2 = Product("p2", "unit", "Product 2", "2222", 15.0)
+    product_repo.create(product1)
+    product_repo.create(product2)
+
+    receipt = receipt_service.create()
+
+    from app.schemas.receipt import AddProductRequest
+    receipt_service.add_product(
+        receipt.id,
+        product1,
+        AddProductRequest(id="p1", quantity=3)
+    )
+    receipt_service.add_product(
+        receipt.id,
+        product2,
+        AddProductRequest(id="p2", quantity=2)
+    )
+
+    receipt_service.close_receipt(receipt.id)
+
+    sales_data = receipt_repo.get_sales_data()
+    assert sales_data is not None
+    assert sales_data.n_receipts == 1
+    assert sales_data.revenue == 60.0
+
+
+def test_sales_data_with_currency_conversion() -> None:
+    sqlite = Sqlite()
+    sqlite.clear_tables()
+
+    receipt_repo = sqlite.receipts()
+    receipt_service = ReceiptService(receipt_repo)
+
+    receipt = Receipt(id=str(uuid.uuid4()), status="close", products=[], total=100.0)
+    receipt_repo.create(receipt)
+
+    from app.core.constants import USD, EUR
+
+    gel_amount = receipt_service.calculate_payment(receipt.id, "GEL")
+    usd_amount = receipt_service.calculate_payment(receipt.id, USD)
+    eur_amount = receipt_service.calculate_payment(receipt.id, EUR)
+
+    assert gel_amount == 100.0
+
+    from app.core.constants import GEL_TO_USD, GEL_TO_EUR
+    assert usd_amount == round(100.0 / GEL_TO_USD, 2)
+    assert eur_amount == round(100.0 / GEL_TO_EUR, 2)
+
+
+def test_sales_data_across_shifts() -> None:
+    sqlite = Sqlite()
+    sqlite.clear_tables()
+
+    shift_repo = sqlite.shifts()
+    receipt_repo = sqlite.receipts()
+
+    shift1_id = str(uuid.uuid4())
+    shift2_id = str(uuid.uuid4())
+
+    shift1 = Shift(id=shift1_id, status="close", receipts=[])
+    shift2 = Shift(id=shift2_id, status="close", receipts=[])
+
+    shift_repo.create(shift1)
+    shift_repo.create(shift2)
+
+    for shift_id in [shift1_id, shift2_id]:
+        for i in range(3):
+            receipt_id = str(uuid.uuid4())
+            receipt = Receipt(
+                id=receipt_id,
+                status="close",
+                products=[
+                    Products(id=f"p{i}", quantity=1, price=10.0 * (i + 1), total=10.0 * (i + 1))
+                ],
+                total=10.0 * (i + 1)
+            )
+            receipt_repo.create(receipt)
+            shift_repo.add_receipt_to_shift(shift_id, receipt_id)
+
+    expected_revenue = 2 * (10.0 + 20.0 + 30.0)
+
+    sales_data = receipt_repo.get_sales_data()
+    assert sales_data is not None
+    assert sales_data.n_receipts == 6
+    assert sales_data.revenue == expected_revenue
+
+
+def test_receipt_total_calculation() -> None:
+    sqlite = Sqlite()
+    sqlite.clear_tables()
+
+    receipt_repo = sqlite.receipts()
+    product_repo = sqlite.products()
+    receipt_service = ReceiptService(receipt_repo)
+
+    product = Product("p1", "unit", "Test Product", "1234", 25.0)
+    product_repo.create(product)
+
+    receipt = receipt_service.create()
+
+    from app.schemas.receipt import AddProductRequest
+
+    receipt_service.add_product(
+        receipt.id,
+        product,
+        AddProductRequest(id="p1", quantity=2)
+    )
+
+    receipt_service.add_product(
+        receipt.id,
+        product,
+        AddProductRequest(id="p1", quantity=3)
+    )
+
+    updated_receipt = receipt_service.read(receipt.id)
+
+    assert updated_receipt.total == 125.0
+
+    assert len(updated_receipt.products) == 2
+
+    assert receipt_service.get_total(updated_receipt) == 125.0
