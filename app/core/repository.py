@@ -1,6 +1,6 @@
 from typing import List, Optional, Protocol, TypeVar
 
-from app.core.receipt import Products
+from app.core.receipt import Products, Receipt
 from app.schemas.sales import SalesData
 
 ItemT = TypeVar("ItemT")

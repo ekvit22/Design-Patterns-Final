@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing import Any, Generic, List, Optional, Protocol, TypeVar
 
 from app.core.campaign.campaign import Campaign
-# from app.core.campaign.xreport import XReport
 from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
@@ -108,40 +107,6 @@ class InMemoryRepository(Generic[ItemT]):
         if receipt and hasattr(receipt, "products"):
             return receipt.products # type: ignore
         return []
-    def generate_x_report(self, shift_id: str, shift: Shift, receipt_repository: Repository[Receipt]) -> Optional[XReport]:
-        if not shift:
-            return None
-
-        receipt_ids = shift.receipts
-        if not receipt_ids:
-            return None
-
-        total_receipts = len(receipt_ids)
-        items_sold: dict[str, int] = {}
-        revenue = 0.0
-
-        for receipt_id in receipt_ids:
-            receipt = receipt_repository.read(receipt_id)
-            if receipt:
-                revenue += receipt.total
-
-                for product in receipt.products:
-                    if product.id in items_sold:
-                        items_sold[product.id] += product.quantity
-                    else:
-                        items_sold[product.id] = product.quantity
-
-
-        from uuid import uuid4
-        from app.core.xreport import XReport
-        return XReport(
-            id=str(uuid4()),
-            shift_id=shift_id,
-            total_receipts=total_receipts,
-            items_sold=items_sold,
-            revenue=revenue
-        )
-
 
 
 @dataclass

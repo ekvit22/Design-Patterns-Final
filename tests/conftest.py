@@ -7,11 +7,11 @@ from app.infra.sqlite import Sqlite
 from app.runner.setup import setup
 
 
-@pytest.fixture # type: ignore
+@pytest.fixture
 def http() -> TestClient:
     return TestClient(setup())
 
-@pytest.fixture(autouse=True) # type: ignore
+@pytest.fixture(autouse=True)
 def clean_database() -> Generator[None, None, None]:
     sqlite: Sqlite = Sqlite()
     sqlite.clear_tables()

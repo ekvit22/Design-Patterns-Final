@@ -1,10 +1,9 @@
-from collections import defaultdict
-from typing import Any, Dict, Optional
+from typing import List
+from uuid import uuid4
 
 from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.shift import Shift
-from fastapi import HTTPException
 
 from app.core.xreport import XReport
 
@@ -15,20 +14,22 @@ class XReportService:
         self.shift_repository = shift_repository
         self.receipt_repository = receipt_repository
 
-    def generate_x_report(self, shift_id: str, shift: Optional[Shift], receipt_repository: Optional[Repository[Receipt]]) -> XReport:
-        shift = self.shift_repository.read(shift_id)
-        if not shift:
-            raise HTTPException(
-                status_code=404,
-                detail={"error": {"message": f"Shift with id<{shift_id}> does not exist. fuck"}}
-            )
+    def generate_x_report(self, shift_id: str, receipts: List[Receipt | None]) -> XReport:
+        total_receipts = len(receipts)
+        items_sold: dict[str, int] = {}
+        revenue = 0.0
 
-        report = self.repository.generate_x_report(shift_id, shift, self.receipt_repository)
-        if not report:
-            raise HTTPException(
-                status_code=404,
-                detail={"error": {
-                    "message": f"Could not generate X-report for shift<{shift_id}>. The shift may not have any receipts. esaaa?"}}
-            )
+        for receipt in receipts:
+            if receipt is None:
+                raise Exception('receipt is None')
+            revenue += receipt.total
+            for product in receipt.products:
+                items_sold[product.id] = items_sold.get(product.id, 0) + product.quantity
 
-        return report
+        return XReport(
+            id=str(uuid4()),
+            shift_id=shift_id,
+            total_receipts=total_receipts,
+            items_sold=items_sold,
+            revenue=revenue
+        )

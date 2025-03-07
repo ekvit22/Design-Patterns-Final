@@ -26,6 +26,8 @@ class ShiftServiceTests(unittest.TestCase):
         mock_shift.status = "open"
         self.mock_repository.read.return_value = mock_shift
         result = self.shift_service.read_shift("shift-1")
+        if result is None:
+            raise AssertionError()
         self.assertEqual(result.status, "open")
 
     def test_close_shift(self) -> None:
@@ -36,6 +38,8 @@ class ShiftServiceTests(unittest.TestCase):
         mock_shift.status = "close"
         self.mock_repository.read.return_value = mock_shift
         result = self.shift_service.read_shift("shift-1")
+        if result is None:
+            raise AssertionError()
         self.assertEqual(result.status, "close")
 
     def test_add_receipt_to_shift(self) -> None:
@@ -46,6 +50,8 @@ class ShiftServiceTests(unittest.TestCase):
 
         self.mock_repository.read.return_value.receipts.append("receipt-1")
         shift = self.shift_service.read_shift("shift-1")
+        if shift is None:
+            raise AssertionError()
         assert "receipt-1" in shift.receipts
         assert len(shift.receipts) == 1
 
@@ -60,6 +66,8 @@ class ShiftServiceTests(unittest.TestCase):
     def test_read_shift(self) -> None:
         self.mock_repository.read.return_value = Shift(id="shift-1", status="open", receipts=["receipt-1", "receipt-2"])
         shift = self.shift_service.read_shift("shift-1")
+        if shift is None:
+            raise AssertionError()
         assert shift.id == "shift-1"
         assert shift.status == "open"
         assert shift.receipts == ["receipt-1", "receipt-2"]

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Protocol, Annotated, Dict, List
+from typing import Protocol, Annotated, Dict
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from starlette.requests import Request
 
 from app.core.repository import Repository
-from app.core.shift import Shift
 from app.core.xreport import XReport
 from app.infra.api.receipt_api import create_receipt_service
 from app.infra.api.shift_api import create_shift_service
@@ -46,5 +45,9 @@ def create_xreport_service(req: Request,
 def get_x_report(
         shift_id: str,
         service: Annotated[XReportService, Depends(create_xreport_service)],
+        receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)],
+        shift_service: Annotated[ShiftService, Depends(create_shift_service)],
 ) -> XReport:
-    return service.generate_x_report(shift_id, None, None)
+    receipt_ids = shift_service.get_shift_receipt_ids(shift_id)
+    receipts = receipt_service.get_every_receipt(receipt_ids)
+    return service.generate_x_report(shift_id, receipts)

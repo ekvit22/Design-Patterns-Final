@@ -8,7 +8,6 @@ from app.core.receipt import Products, Receipt
 from app.core.repository import ItemT, Repository
 from app.core.shift import Shift
 from app.schemas.sales import SalesData
-from app.core.xreport import XReport
 
 connection = sqlite3.connect("database.db", check_same_thread=False)
 
@@ -231,6 +230,26 @@ class ReceiptRepository(Repository[Receipt]):
 
         return res
 
+    def read_with_name(self, item_name: str) -> Optional[Receipt]:
+        return None
+
+    def read_with_barcode(self, barcode: str) -> Optional[Receipt]:
+        return None
+
+    def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+        return None
+
+    def open_shift(self, shift_id: str) -> None:
+        return None
+
+    def close_shift(self, shift_id: str) -> None:
+        return None
+
+    def get_all(self) -> List[Receipt]:
+        return []
+
+    def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+        return []
 
 @dataclass
 class ShiftRepository(Repository[Shift]):
@@ -447,61 +466,6 @@ class ProductSqliteRepository(Repository[Product]):
         return []
 
 @dataclass
-class XReportRepository:
-    def generate_x_report(self, shift_id: str, shift: Optional[Shift], receipt_repository: Optional[ReceiptRepository]) -> Optional[XReport]:
-        cursor = connection.cursor()
-
-        cursor.execute("""
-                    SELECT receipt_id FROM shift_receipts WHERE shift_id = ?
-                """, (shift_id,))
-
-        receipt_ids = [row[0] for row in cursor.fetchall()]
-        if not receipt_ids:
-            return None
-
-        total_receipts = len(receipt_ids)
-        items_sold: dict[str, int] = {}
-        gel_revenue = 0.0
-
-        receipt_placeholders = ','.join(['?' for _ in receipt_ids])
-
-        cursor.execute(f"""
-                    SELECT product_id, quantity, total
-                    FROM receipts_products 
-                    WHERE receipt_id IN ({receipt_placeholders})
-                """, receipt_ids)
-
-        for row in cursor.fetchall():
-            product_id, quantity, total = row[0], row[1], row[2]
-            gel_revenue += total
-
-            if product_id in items_sold:
-                items_sold[product_id] += quantity
-            else:
-                items_sold[product_id] = quantity
-
-        revenue = gel_revenue
-
-        from uuid import uuid4
-        from app.core.xreport import XReport
-        return XReport(
-            id=str(uuid4()),
-            shift_id=shift_id,
-            total_receipts=total_receipts,
-            items_sold=items_sold,
-            revenue=revenue
-        )
-
-
-
-    def create(self, item: XReport) -> XReport:
-        return item
-
-    def read(self, item_id: str) -> Optional[XReport]:
-        return None
-
-
-@dataclass
 class Sqlite:
 
     def campaigns(self) -> Repository[Campaign]:
@@ -515,10 +479,6 @@ class Sqlite:
 
     def products(self) -> Repository[Product]:
         return ProductSqliteRepository()
-
-    def xreport(self) -> Repository[XReport]:
-        return XReportRepository()
-
 
     def clear_tables(self) -> None:
         cursor = connection.cursor()

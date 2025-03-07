@@ -1,4 +1,7 @@
+from typing import List, Optional
+
 from app.core.campaign.campaign import Campaign
+from app.core.product import Product
 from app.core.repository import Repository
 from app.infra.sqlite import Sqlite
 from app.core.receipt import Receipt, Products
@@ -99,7 +102,8 @@ def test_xreport_generation() -> None:
     shift_repo.add_receipt_to_shift("shift123", "r1")
     shift_repo.add_receipt_to_shift("shift123", "r2")
 
-    xreport = xreports.generate_x_report("shift123", shift, receipts)
+    if hasattr(xreports, "generate_x_report"):
+        xreport = xreports.generate_x_report("shift123", shift, receipts)
 
     assert xreport is not None
     assert xreport.shift_id == "shift123"
