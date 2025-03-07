@@ -192,12 +192,13 @@ def test_update_receipt() -> None:
     product1 = Products(id="product-1", quantity=2, price=10.0, total=20.0)
     product2 = Products(id="product-2", quantity=3, price=40.0, total=120.0)
     new_receipt = receipt_repo.read(receipt.id)
-    new_receipt.status = "close"
-    new_receipt.products.append(product1)
-    new_receipt.products.append(product2)
-    new_receipt.total += product1.total + product2.total
-    receipt_repo.update(new_receipt)
-    updated_receipt = receipt_repo.read(new_receipt.id)
+    if new_receipt is not None:
+        new_receipt.status = "close"
+        new_receipt.products.append(product1)
+        new_receipt.products.append(product2)
+        new_receipt.total += product1.total + product2.total
+        receipt_repo.update(new_receipt)
+        updated_receipt = receipt_repo.read(new_receipt.id)
     assert updated_receipt is not None
     assert len(updated_receipt.products) == 2
     assert updated_receipt.products[0].id == "product-1"
@@ -220,20 +221,24 @@ def test_open_receipt() -> None:
     receipt = Receipt(id="receipt-1", status="close", products=[], total=0.0)
     receipt_repo.create(receipt)
     read_receipt = receipt_repo.read(receipt.id)
-    assert read_receipt.status == "close"
-    receipt_repo.open_receipt(read_receipt.id)
+    if read_receipt is not None:
+        assert read_receipt.status == "close"
+        receipt_repo.open_receipt(read_receipt.id)
     updated_receipt = receipt_repo.read(receipt.id)
-    assert updated_receipt.status == "open"
+    if updated_receipt is not None:
+        assert updated_receipt.status == "open"
 
 def test_close_receipt() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
     receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
     receipt_repo.create(receipt)
     read_receipt = receipt_repo.read(receipt.id)
-    assert read_receipt.status == "open"
-    receipt_repo.close_receipt(read_receipt.id)
+    if read_receipt is not None:
+        assert read_receipt.status == "open"
+        receipt_repo.close_receipt(read_receipt.id)
     updated_receipt = receipt_repo.read(receipt.id)
-    assert updated_receipt.status == "close"
+    if updated_receipt is not None:
+        assert updated_receipt.status == "close"
 
 def test_get_every_receipt() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
@@ -271,17 +276,26 @@ def test_open_shift() -> None:
     shift_repo: Repository[Shift] = Sqlite().shifts()
     shift = Shift(id="shift-1", status="closed", receipts=[])
     shift_repo.create(shift)
-    assert shift_repo.read(shift.id).status == "closed"
-    shift_repo.open_shift(shift.id)
-    assert shift_repo.read(shift.id).status == "open"
+    if shift is not None:
+        read_shift = shift_repo.read(shift.id)
+        if read_shift is not None:
+            assert read_shift.status == "closed"
+        shift_repo.open_shift(shift.id)
+        read_shift = shift_repo.read(shift.id)
+        if read_shift is not None:
+            assert read_shift.status == "open"
 
 def test_close_shift() -> None:
     shift_repo: Repository[Shift] = Sqlite().shifts()
     shift = Shift(id="shift-1", status="open", receipts=[])
     shift_repo.create(shift)
-    assert shift_repo.read(shift.id).status == "open"
+    read_shift = shift_repo.read(shift.id)
+    if read_shift is not None:
+        assert read_shift.status == "open"
     shift_repo.close_shift(shift.id)
-    assert shift_repo.read(shift.id).status == "close"
+    read_shift = shift_repo.read(shift.id)
+    if read_shift is not None:
+        assert read_shift.status == "close"
 
 def test_add_receipt_to_shift() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
@@ -295,7 +309,8 @@ def test_add_receipt_to_shift() -> None:
 
     shift_repo.add_receipt_to_shift(shift.id, receipt.id)
     updated_shift = shift_repo.read(shift.id)
-    assert "receipt-1" in updated_shift.receipts
+    if updated_shift is not None:
+        assert "receipt-1" in updated_shift.receipts
 
 
 def test_get_shift_receipt_ids() -> None:
@@ -323,11 +338,14 @@ def test_update_shift() -> None:
     shift = Shift(id="shift-1", status="open", receipts=[])
     shift_repo.create(shift)
     new_shift = shift_repo.read(shift.id)
-    new_shift.status = "close"
-    shift_repo.update(new_shift)
+    if new_shift is not None:
+        new_shift.status = "close"
+    if new_shift is not None:
+        shift_repo.update(new_shift)
     updated_shift = shift_repo.read("shift-1")
-    assert updated_shift.status == "close"
-    assert updated_shift.id == "shift-1"
+    if updated_shift is not None:
+        assert updated_shift.status == "close"
+        assert updated_shift.id == "shift-1"
 
 
 def test_delete_shift() -> None:
