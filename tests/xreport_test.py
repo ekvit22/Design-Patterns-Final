@@ -1,11 +1,12 @@
-from app.core.xreport import XReport
-from app.services.xreport_service import XReportService
-from app.core.receipt import Receipt, Products
-from app.core.shift import Shift
-from app.core.repository import Repository
-from app.schemas.sales import SalesData
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional
 from uuid import uuid4
+
+from app.core.receipt import Products, Receipt
+from app.core.repository import Repository
+from app.core.shift import Shift
+from app.core.xreport import XReport
+from app.schemas.sales import SalesData
+from app.services.xreport_service import XReportService
 
 
 def test_xreport_in_memory() -> None:
@@ -212,10 +213,12 @@ def test_xreport_in_memory() -> None:
     shift.receipts = [receipt1_id, receipt2_id]
 
     mock_shift_repo = MockShiftRepository({shift_id: shift})
-    mock_receipt_repo = MockReceiptRepository({receipt1_id: receipt1, receipt2_id: receipt2})
+    mock_receipt_repo = MockReceiptRepository({receipt1_id: receipt1,
+                                               receipt2_id: receipt2})
     mock_xreport_repo = MockXReportRepository()
 
-    xreport_service = XReportService(mock_xreport_repo, mock_shift_repo, mock_receipt_repo)
+    xreport_service = XReportService(mock_xreport_repo,
+                                     mock_shift_repo, mock_receipt_repo)
 
     receipts: List[Receipt | None] = [receipt1, receipt2]
 

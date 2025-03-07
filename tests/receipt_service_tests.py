@@ -6,9 +6,8 @@ from app.core.constants import EUR, GEL, GEL_TO_EUR, USD
 from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.schemas.receipt import AddProductRequest
-from app.services.receipt_service import ReceiptService
 from app.schemas.sales import SalesData
-
+from app.services.receipt_service import ReceiptService
 
 
 class ReceiptServiceTests(unittest.TestCase):

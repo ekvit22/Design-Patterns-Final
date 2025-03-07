@@ -31,10 +31,14 @@ class XReportResponse(BaseModel):
 
 
 def create_xreport_service(req: Request,
-                           shift_service: Annotated[ShiftService, Depends(create_shift_service)],
-                           receipt_service: Annotated[ReceiptService, Depends(create_receipt_service)]) -> XReportService:
+                           shift_service: Annotated[ShiftService,
+                                            Depends(create_shift_service)],
+                           receipt_service: Annotated[ReceiptService,
+                                            Depends(create_receipt_service)])\
+                                            -> XReportService:
     infra: _Infra = req.app.state.infra
-    return XReportService(infra.xreport(), shift_service.repository, receipt_service.repository)
+    return XReportService(infra.xreport(), shift_service.repository,
+                          receipt_service.repository)
 
 
 @xreport_api.get(

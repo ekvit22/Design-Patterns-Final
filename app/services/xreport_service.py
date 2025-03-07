@@ -8,12 +8,15 @@ from app.core.xreport import XReport
 
 
 class XReportService:
-    def __init__(self, repository: Repository[XReport], shift_repository: Repository[Shift], receipt_repository: Repository[Receipt]):
+    def __init__(self, repository: Repository[XReport],
+                 shift_repository: Repository[Shift],
+                 receipt_repository: Repository[Receipt]):
         self.repository = repository
         self.shift_repository = shift_repository
         self.receipt_repository = receipt_repository
 
-    def generate_x_report(self, shift_id: str, receipts: List[Receipt | None]) -> XReport:
+    def generate_x_report(self, shift_id: str,
+                          receipts: List[Receipt | None]) -> XReport:
         total_receipts = len(receipts)
         items_sold: dict[str, int] = {}
         revenue = 0.0
@@ -23,7 +26,8 @@ class XReportService:
                 raise Exception('receipt is None')
             revenue += receipt.total
             for product in receipt.products:
-                items_sold[product.id] = items_sold.get(product.id, 0) + product.quantity
+                items_sold[product.id] = (items_sold.get(product.id, 0)
+                                          + product.quantity)
 
         return XReport(
             id=str(uuid4()),

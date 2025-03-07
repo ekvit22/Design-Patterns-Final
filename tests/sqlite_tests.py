@@ -12,7 +12,6 @@ from app.schemas.sales import SalesData
 from app.services.receipt_service import ReceiptService
 
 
-
 def test_campaign_sql_memory() -> None:
     campaigns: Repository[Campaign] = Sqlite().campaigns()
     campaign1 = Campaign("4444","test1","discount;1234;10")
@@ -61,9 +60,10 @@ def test_product_sql_memory() -> None:
 
 
 def test_xreport_generation() -> None:
+    from uuid import uuid4
+
     from app.infra.sqlite import Sqlite
     from app.services.xreport_service import XReportService
-    from uuid import uuid4
 
     sqlite = Sqlite()
     sqlite.clear_tables()
@@ -255,7 +255,8 @@ def test_get_products_from_receipt() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
     product1 = Products(id="product-1", quantity=2, price=5.0, total=10.0)
     product2 = Products(id="product-2", quantity=3, price=30.0, total=90.0)
-    receipt = Receipt(id="receipt-1", status="open", products=[product1, product2], total=100.0)
+    receipt = Receipt(id="receipt-1", status="open",
+                      products=[product1, product2], total=100.0)
     receipt_repo.create(receipt)
     products = receipt_repo.get_products_from_receipt(receipt.id)
     assert len(products) == 2
@@ -470,7 +471,7 @@ def test_sales_data_with_currency_conversion() -> None:
     receipt = Receipt(id=str(uuid.uuid4()), status="close", products=[], total=100.0)
     receipt_repo.create(receipt)
 
-    from app.core.constants import USD, EUR
+    from app.core.constants import EUR, USD
 
     gel_amount = receipt_service.calculate_payment(receipt.id, "GEL")
     usd_amount = receipt_service.calculate_payment(receipt.id, USD)
@@ -478,7 +479,7 @@ def test_sales_data_with_currency_conversion() -> None:
 
     assert gel_amount == 100.0
 
-    from app.core.constants import GEL_TO_USD, GEL_TO_EUR
+    from app.core.constants import GEL_TO_EUR, GEL_TO_USD
     assert usd_amount == round(100.0 / GEL_TO_USD, 2)
     assert eur_amount == round(100.0 / GEL_TO_EUR, 2)
 
@@ -506,7 +507,8 @@ def test_sales_data_across_shifts() -> None:
                 id=receipt_id,
                 status="close",
                 products=[
-                    Products(id=f"p{i}", quantity=1, price=10.0 * (i + 1), total=10.0 * (i + 1))
+                    Products(id=f"p{i}", quantity=1,
+                             price=10.0 * (i + 1), total=10.0 * (i + 1))
                 ],
                 total=10.0 * (i + 1)
             )
