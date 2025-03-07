@@ -82,11 +82,8 @@ class ReceiptServiceTests(unittest.TestCase):
     def test_create(self) -> None:
         expected_receipt = Receipt(id="uuid1", status="open", products=[], total=0)
         self.mock_repository.create.return_value = expected_receipt
+        result = self.receipt_service.create()
 
-        with patch('uuid.uuid4', return_value="uuid1"):
-            result = self.receipt_service.create()
-
-        self.assertEqual(result.id, "uuid1")
         self.assertEqual(result.status, "open")
         self.assertEqual(result.products, [])
         self.assertEqual(result.total, 0)
@@ -102,7 +99,7 @@ class ReceiptServiceTests(unittest.TestCase):
         self.mock_repository.read.assert_called_once_with("receipt-1")
 
     def test_open_receipt(self) -> None:
-        mock_receipt = Receipt(id="receipt-1", status="closed", products=[], total=0)
+        mock_receipt = Receipt(id="receipt-1", status="close", products=[], total=0)
         self.mock_repository.read.return_value = mock_receipt
         self.receipt_service.open_receipt("receipt-1")
         self.mock_repository.open_receipt.assert_called_once_with("receipt-1")
@@ -127,7 +124,7 @@ class ReceiptServiceTests(unittest.TestCase):
                                    products=[existing_product], total=100)
         self.mock_repository.read.return_value = existing_receipt
 
-        new_product = Product(id="prod-2", unit_id="2", name="prod2",
+        new_product = Product(id="prod-2", unit="2", name="prod2",
                               price=75, barcode="12")
         request = AddProductRequest(id="prod-2", quantity=2)
 

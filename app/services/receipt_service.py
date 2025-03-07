@@ -35,13 +35,23 @@ class ReceiptService:
         return receipt.total
 
     def open_receipt(self, receipt_id: str) -> None:
+        receipt = self.repository.read(receipt_id)
+        if not receipt:
+            raise ValueError(f"Receipt {receipt_id} does not exist.")
         self.repository.open_receipt(receipt_id)
 
     def close_receipt(self, receipt_id: str) -> None:
+        receipt = self.repository.read(receipt_id)
+        if not receipt:
+            raise ValueError(f"Receipt {receipt_id} does not exist.")
         self.repository.close_receipt(receipt_id)
 
     def add_product(self, receipt_id: str, product: Product,
                     request: AddProductRequest) -> Receipt:
+        receipt = self.repository.read(receipt_id)
+        if not receipt:
+            raise ValueError(f"Receipt {receipt_id} does not exist.")
+
         new_receipt: Optional[Receipt] = self.repository.read(receipt_id)
         if new_receipt is None:
             raise HTTPException(status_code=404,
