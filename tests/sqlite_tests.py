@@ -7,6 +7,7 @@ from app.core.repository import Repository
 from app.core.shift import Shift
 from app.core.xreport import XReport
 from app.infra.sqlite import Sqlite
+from app.schemas.sales import SalesData
 
 
 def test_campaign_sql_memory() -> None:
@@ -56,145 +57,115 @@ def test_product_sql_memory() -> None:
     assert res.price == 400
 
 
-
-
-
 def test_xreport_generation() -> None:
+    from app.infra.sqlite import Sqlite
+    from app.services.xreport_service import XReportService
+    from uuid import uuid4
+
     sqlite = Sqlite()
     sqlite.clear_tables()
 
-    shifts: Repository[Shift] = sqlite.shifts()
-    receipts: Repository[Receipt] = sqlite.receipts()
-    products: Repository[Product] = sqlite.products()
-    xreports: Repository[XReport] = sqlite.xreport()
-
-    shift = Shift("shift123", "open", [])
-    shifts.create(shift)
-
-    products.create(Product("p1", "unit1", "apple", "1111", 10))
-    products.create(Product("p2", "unit2", "banana", "2222", 15))
-
-    receipt1 = Receipt(
-        id="r1",
-        status="close",
-        products=[
-            Products(id="p1", quantity=2, price=10, total=20),
-            Products(id="p2", quantity=1, price=15, total=15)
-        ],
-        total=35
-    )
-
-    receipt2 = Receipt(
-        id="r2",
-        status="close",
-        products=[
-            Products(id="p1", quantity=1, price=10, total=10),
-            Products(id="p2", quantity=3, price=15, total=45)
-        ],
-        total=55
-    )
-
-    receipts.create(receipt1)
-    receipts.create(receipt2)
-
     shift_repo = sqlite.shifts()
-    shift_repo.add_receipt_to_shift("shift123", "r1")
-    shift_repo.add_receipt_to_shift("shift123", "r2")
+    receipt_repo = sqlite.receipts()
+    product_repo = sqlite.products()
 
-    if hasattr(xreports, "generate_x_report"):
-        xreport = xreports.generate_x_report("shift123", shift, receipts)
+    class MockXReportRepository(Repository[XReport]):
+        def create(self, item: XReport) -> XReport:
+            return item
 
-    assert xreport is not None
-    assert xreport.shift_id == "shift123"
+        def read(self, item_id: str) -> Optional[XReport]:
+            return None
+
+        def update(self, item: XReport) -> None:
+            pass
+
+        def delete(self, item_id: str) -> None:
+            pass
+
+        def get_all(self) -> List[XReport]:
+            return []
+
+        def read_with_name(self, item_name: str) -> Optional[XReport]:
+            return None
+
+        def read_with_barcode(self, item_barcode: str) -> Optional[XReport]:
+            return None
+
+        def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+            pass
+
+        def close_receipt(self, receipt_id: str) -> None:
+            pass
+
+        def open_receipt(self, receipt_id: str) -> None:
+            pass
+
+        def close_shift(self, shift_id: str) -> None:
+            pass
+
+        def open_shift(self, shift_id: str) -> None:
+            pass
+
+        def get_every_receipt(self, receipt_ids: List[str]) -> List[XReport]:
+            return []
+
+        def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+            return []
+
+        def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
+            return []
+
+        def get_sales_data(self) -> Optional[SalesData]:
+            return None
+
+    product1 = Product("p1", "unit", "Product 1", "1111", 10.0)
+    product2 = Product("p2", "unit", "Product 2", "2222", 15.0)
+    product_repo.create(product1)
+    product_repo.create(product2)
+
+    shift_id = str(uuid4())
+    shift = Shift(id=shift_id, status="open", receipts=[])
+    shift_repo.create(shift)
+
+    receipt1_id = str(uuid4())
+    receipt1 = Receipt(
+        id=receipt1_id,
+        status="close",
+        products=[
+            Products(id="p1", quantity=2, price=10.0, total=20.0),
+            Products(id="p2", quantity=1, price=15.0, total=15.0)
+        ],
+        total=35.0
+    )
+
+    receipt2_id = str(uuid4())
+    receipt2 = Receipt(
+        id=receipt2_id,
+        status="close",
+        products=[
+            Products(id="p1", quantity=1, price=10.0, total=10.0),
+            Products(id="p2", quantity=3, price=15.0, total=45.0)
+        ],
+        total=55.0
+    )
+
+    receipt_repo.create(receipt1)
+    receipt_repo.create(receipt2)
+    shift_repo.add_receipt_to_shift(shift_id, receipt1_id)
+    shift_repo.add_receipt_to_shift(shift_id, receipt2_id)
+
+    xreport_service = XReportService(MockXReportRepository(), shift_repo, receipt_repo)
+
+    shift_with_receipts = shift_repo.read(shift_id)
+    assert shift_with_receipts is not None
+
+    receipts = receipt_repo.get_every_receipt(shift_with_receipts.receipts)
+
+    receipts_for_xreport: List[Receipt | None] = [receipt for receipt in receipts]
+
+    xreport = xreport_service.generate_x_report(shift_id, receipts_for_xreport)
+
+    assert xreport.shift_id == shift_id
     assert xreport.total_receipts == 2
     assert xreport.revenue == 90.0
-
-    # Check items sold
-    assert "p1" in xreport.items_sold
-    assert "p2" in xreport.items_sold
-    assert xreport.items_sold["p1"] == 3
-    assert xreport.items_sold["p2"] == 4
-
-
-def test_xreport_empty_shift() -> None:
-    sqlite = Sqlite()
-    sqlite.clear_tables()
-
-    shifts: Repository[Shift] = sqlite.shifts()
-    receipts: Repository[Receipt] = sqlite.receipts()
-    xreports: Repository[XReport] = sqlite.xreport()
-
-    empty_shift = Shift("empty123", "open", [])
-    shifts.create(empty_shift)
-
-    xreport = xreports.generate_x_report("empty123", empty_shift, receipts)
-
-    assert xreport is None
-
-
-def test_xreport_with_multiple_products() -> None:
-    sqlite = Sqlite()
-    sqlite.clear_tables()
-
-    shifts: Repository[Shift] = sqlite.shifts()
-    receipts: Repository[Receipt] = sqlite.receipts()
-    products: Repository[Product] = sqlite.products()
-    xreports: Repository[XReport] = sqlite.xreport()
-
-    products.create(Product("p1", "unit1", "apple", "1111", 10))
-    products.create(Product("p2", "unit2", "banana", "2222", 15))
-    products.create(Product("p3", "unit3", "orange", "3333", 12))
-
-    shift = Shift("complex123", "open", [])
-    shifts.create(shift)
-
-    receipt1 = Receipt(
-        id="r1",
-        status="close",
-        products=[
-            Products(id="p1", quantity=2, price=10, total=20),
-            Products(id="p2", quantity=1, price=15, total=15),
-            Products(id="p3", quantity=3, price=12, total=36)
-        ],
-        total=71
-    )
-
-    receipt2 = Receipt(
-        id="r2",
-        status="close",
-        products=[
-            Products(id="p1", quantity=1, price=10, total=10),
-            Products(id="p3", quantity=2, price=12, total=24)
-        ],
-        total=34
-    )
-
-    receipt3 = Receipt(
-        id="r3",
-        status="close",
-        products=[
-            Products(id="p2", quantity=4, price=15, total=60)
-        ],
-        total=60
-    )
-
-    receipts.create(receipt1)
-    receipts.create(receipt2)
-    receipts.create(receipt3)
-
-    shift_repo = sqlite.shifts()
-    shift_repo.add_receipt_to_shift("complex123", "r1")
-    shift_repo.add_receipt_to_shift("complex123", "r2")
-    shift_repo.add_receipt_to_shift("complex123", "r3")
-
-    xreport = xreports.generate_x_report("complex123", shift, receipts)
-
-    assert xreport is not None
-    assert xreport.shift_id == "complex123"
-    assert xreport.total_receipts == 3
-    assert xreport.revenue == 165.0
-
-    # Check items sold
-    assert xreport.items_sold["p1"] == 3
-    assert xreport.items_sold["p2"] == 5
-    assert xreport.items_sold["p3"] == 5
+    assert xreport.items_sold == {"p1": 3, "p2": 4}

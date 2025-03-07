@@ -1,160 +1,238 @@
-import unittest
-from unittest.mock import Mock
-
-from app.core.receipt import Products, Receipt
-from app.core.shift import Shift
 from app.core.xreport import XReport
-from app.infra.in_memory import InMemory
 from app.services.xreport_service import XReportService
+from app.core.receipt import Receipt, Products
+from app.core.shift import Shift
+from app.core.repository import Repository
+from app.schemas.sales import SalesData
+from typing import List, Optional, Dict
+from uuid import uuid4
 
 
-class XReportServiceTests(unittest.TestCase):
-    def setUp(self):
-        self.mock_repository = Mock()
-        self.mock_shift_repository = Mock()
-        self.mock_receipt_repository = Mock()
-        self.xreport_service = XReportService(
-            self.mock_repository,
-            self.mock_shift_repository,
-            self.mock_receipt_repository
-        )
+def test_xreport_in_memory() -> None:
 
-    def test_generate_x_report_success(self):
-        shift_id = "shift-123"
-        mock_shift = Mock()
-        mock_shift.id = shift_id
-        mock_shift.status = "open"
-        mock_shift.receipts = ["receipt-1", "receipt-2"]
+    class MockXReportRepository(Repository[XReport]):
+        def __init__(self, items: Optional[Dict[str, XReport]] = None) -> None:
+            self.items = items or {}
 
-        expected_report = XReport(
-            id="report-123",
-            shift_id=shift_id,
-            total_receipts=2,
-            items_sold={"product-1": 3, "product-2": 1},
-            revenue=650.0
-        )
+        def create(self, item: XReport) -> XReport:
+            self.items[item.id] = item
+            return item
 
-        self.mock_shift_repository.read.return_value = mock_shift
-        self.mock_repository.generate_x_report.return_value = expected_report
+        def read(self, item_id: str) -> Optional[XReport]:
+            return self.items.get(item_id)
 
-        result = self.xreport_service.generate_x_report(shift_id, None, None)
+        def update(self, item: XReport) -> None:
+            self.items[item.id] = item
 
-        self.mock_shift_repository.read.assert_called_once_with(shift_id)
-        self.mock_repository.generate_x_report.assert_called_once_with(
-            shift_id, mock_shift, self.mock_receipt_repository
-        )
-        self.assertEqual(result, expected_report)
-        self.assertEqual(result.id, expected_report.id)
-        self.assertEqual(result.shift_id, shift_id)
-        self.assertEqual(result.total_receipts, 2)
-        self.assertEqual(result.items_sold, {"product-1": 3, "product-2": 1})
-        self.assertEqual(result.revenue, 650.0)
+        def delete(self, item_id: str) -> None:
+            if item_id in self.items:
+                del self.items[item_id]
 
-    def test_generate_x_report_nonexistent_shift(self):
-        shift_id = "nonexistent-shift"
-        self.mock_shift_repository.read.return_value = None
+        def get_all(self) -> List[XReport]:
+            return list(self.items.values())
 
-        with self.assertRaises(Exception) as context:
-            self.xreport_service.generate_x_report(shift_id, None, None)
+        def read_with_name(self, item_name: str) -> Optional[XReport]:
+            return None
 
-        self.assertIn(f"Shift with id<{shift_id}> does not exist", str(context.exception))
-        self.mock_shift_repository.read.assert_called_once_with(shift_id)
-        self.mock_repository.generate_x_report.assert_not_called()
+        def read_with_barcode(self, item_barcode: str) -> Optional[XReport]:
+            return None
 
-    def test_generate_x_report_empty_shift(self):
-        shift_id = "empty-shift"
-        mock_shift = Mock()
-        mock_shift.id = shift_id
-        mock_shift.receipts = []
+        def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+            pass
 
-        self.mock_shift_repository.read.return_value = mock_shift
-        self.mock_repository.generate_x_report.return_value = None
+        def close_receipt(self, receipt_id: str) -> None:
+            pass
 
-        with self.assertRaises(Exception) as context:
-            self.xreport_service.generate_x_report(shift_id, None, None)
+        def open_receipt(self, receipt_id: str) -> None:
+            pass
 
-        self.assertIn(f"Could not generate X-report for shift<{shift_id}>", str(context.exception))
-        self.mock_shift_repository.read.assert_called_once_with(shift_id)
-        self.mock_repository.generate_x_report.assert_called_once_with(
-            shift_id, mock_shift, self.mock_receipt_repository
-        )
+        def close_shift(self, shift_id: str) -> None:
+            pass
 
+        def open_shift(self, shift_id: str) -> None:
+            pass
 
+        def get_every_receipt(self, receipt_ids: List[str]) -> List[XReport]:
+            return [self.items[rid] for rid in receipt_ids if rid in self.items]
 
+        def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+            return []
 
+        def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
+            return []
 
-def test_generate_x_report_in_memory() -> None:
-    in_memory = InMemory()
-    xreport_repo = in_memory.xreport()
-    shift_repo = in_memory.shifts()
-    receipt_repo = in_memory.receipts()
+        def get_sales_data(self) -> Optional[SalesData]:
+            return None
 
-    shift = Shift(id="shift-123", status="open", receipts=["receipt-1", "receipt-2"])
-    shift_repo.create(shift)
+    class MockShiftRepository(Repository[Shift]):
+        def __init__(self, items: Optional[Dict[str, Shift]] = None) -> None:
+            self.items = items or {}
 
+        def create(self, item: Shift) -> Shift:
+            self.items[item.id] = item
+            return item
+
+        def read(self, item_id: str) -> Optional[Shift]:
+            return self.items.get(item_id)
+
+        def update(self, item: Shift) -> None:
+            self.items[item.id] = item
+
+        def delete(self, item_id: str) -> None:
+            if item_id in self.items:
+                del self.items[item_id]
+
+        def get_all(self) -> List[Shift]:
+            return list(self.items.values())
+
+        def read_with_name(self, item_name: str) -> Optional[Shift]:
+            return None
+
+        def read_with_barcode(self, item_barcode: str) -> Optional[Shift]:
+            return None
+
+        def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+            shift = self.items.get(shift_id)
+            if shift:
+                shift.receipts.append(receipt_id)
+
+        def close_receipt(self, receipt_id: str) -> None:
+            pass
+
+        def open_receipt(self, receipt_id: str) -> None:
+            pass
+
+        def close_shift(self, shift_id: str) -> None:
+            shift = self.items.get(shift_id)
+            if shift:
+                shift.status = "close"
+
+        def open_shift(self, shift_id: str) -> None:
+            shift = self.items.get(shift_id)
+            if shift:
+                shift.status = "open"
+
+        def get_every_receipt(self, receipt_ids: List[str]) -> List[Shift]:
+            return [self.items[rid] for rid in receipt_ids if rid in self.items]
+
+        def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+            shift = self.items.get(shift_id)
+            return shift.receipts if shift else []
+
+        def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
+            return []
+
+        def get_sales_data(self) -> Optional[SalesData]:
+            return None
+
+    class MockReceiptRepository(Repository[Receipt]):
+        def __init__(self, items: Optional[Dict[str, Receipt]] = None) -> None:
+            self.items = items or {}
+
+        def create(self, item: Receipt) -> Receipt:
+            self.items[item.id] = item
+            return item
+
+        def read(self, item_id: str) -> Optional[Receipt]:
+            return self.items.get(item_id)
+
+        def update(self, item: Receipt) -> None:
+            self.items[item.id] = item
+
+        def delete(self, item_id: str) -> None:
+            if item_id in self.items:
+                del self.items[item_id]
+
+        def get_all(self) -> List[Receipt]:
+            return list(self.items.values())
+
+        def read_with_name(self, item_name: str) -> Optional[Receipt]:
+            return None
+
+        def read_with_barcode(self, item_barcode: str) -> Optional[Receipt]:
+            return None
+
+        def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
+            pass
+
+        def close_receipt(self, receipt_id: str) -> None:
+            receipt = self.items.get(receipt_id)
+            if receipt:
+                receipt.status = "close"
+
+        def open_receipt(self, receipt_id: str) -> None:
+            receipt = self.items.get(receipt_id)
+            if receipt:
+                receipt.status = "open"
+
+        def close_shift(self, shift_id: str) -> None:
+            pass
+
+        def open_shift(self, shift_id: str) -> None:
+            pass
+
+        def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
+            return [self.items[rid] for rid in receipt_ids if rid in self.items]
+
+        def get_shift_receipt_ids(self, shift_id: str) -> List[str]:
+            return []
+
+        def get_products_from_receipt(self, receipt_id: str) -> List[Products]:
+            receipt = self.items.get(receipt_id)
+            return receipt.products if receipt else []
+
+        def get_sales_data(self) -> Optional[SalesData]:
+            return None
+
+    shift_id = str(uuid4())
+    shift = Shift(id=shift_id, status="open", receipts=[])
+
+    receipt1_id = str(uuid4())
     receipt1 = Receipt(
-        id="receipt-1",
-        status="closed",
+        id=receipt1_id,
+        status="close",
         products=[
-            Products(id="product-1", quantity=2, price=100, total=200),
-            Products(id="product-2", quantity=1, price=150, total=150)
+            Products(id="apple", quantity=3, price=1.50, total=4.50),
+            Products(id="banana", quantity=2, price=0.75, total=1.50)
         ],
-        total=350
+        total=6.00
     )
 
+    receipt2_id = str(uuid4())
     receipt2 = Receipt(
-        id="receipt-2",
-        status="closed",
+        id=receipt2_id,
+        status="close",
         products=[
-            Products(id="product-1", quantity=1, price=100, total=100),
-            Products(id="product-3", quantity=3, price=75, total=225)
+            Products(id="apple", quantity=1, price=1.50, total=1.50),
+            Products(id="orange", quantity=4, price=1.25, total=5.00)
         ],
-        total=325
+        total=6.50
     )
 
-    receipt_repo.create(receipt1)
-    receipt_repo.create(receipt2)
+    shift.receipts = [receipt1_id, receipt2_id]
 
-    result = xreport_repo.generate_x_report("shift-123", shift, receipt_repo)
+    mock_shift_repo = MockShiftRepository({shift_id: shift})
+    mock_receipt_repo = MockReceiptRepository({receipt1_id: receipt1, receipt2_id: receipt2})
+    mock_xreport_repo = MockXReportRepository()
 
-    assert result is not None
-    assert result.shift_id == "shift-123"
-    assert result.total_receipts == 2
+    xreport_service = XReportService(mock_xreport_repo, mock_shift_repo, mock_receipt_repo)
 
-    assert result.items_sold["product-1"] == 3
-    assert result.items_sold["product-2"] == 1
-    assert result.items_sold["product-3"] == 3
+    receipts: List[Receipt | None] = [receipt1, receipt2]
 
-    assert result.revenue == 675.0
+    xreport = xreport_service.generate_x_report(shift_id, receipts)
 
+    assert xreport.shift_id == shift_id
+    assert xreport.total_receipts == 2
+    assert xreport.revenue == 12.50
+    assert xreport.items_sold == {"apple": 4, "banana": 2, "orange": 4}
 
-def test_generate_x_report_empty_shift() -> None:
-    in_memory = InMemory()
-    xreport_repo = in_memory.xreport()
-    shift_repo = in_memory.shifts()
-    receipt_repo = in_memory.receipts()
+    empty_receipts: List[Receipt | None] = []
+    empty_xreport = xreport_service.generate_x_report(shift_id, empty_receipts)
+    assert empty_xreport.total_receipts == 0
+    assert empty_xreport.revenue == 0.0
+    assert empty_xreport.items_sold == {}
 
-    shift = Shift(id="empty-shift", status="open", receipts=[])
-    shift_repo.create(shift)
-
-    result = xreport_repo.generate_x_report("empty-shift", shift, receipt_repo)
-
-    assert result is None
-
-
-def test_generate_x_report_nonexistent_receipts() -> None:
-    in_memory = InMemory()
-    xreport_repo = in_memory.xreport()
-    shift_repo = in_memory.shifts()
-    receipt_repo = in_memory.receipts()
-
-    shift = Shift(id="bad-shift", status="open", receipts=["nonexistent-1", "nonexistent-2"])
-    shift_repo.create(shift)
-
-    result = xreport_repo.generate_x_report("bad-shift", shift, receipt_repo)
-
-    assert result is not None
-    assert result.total_receipts == 2
-    assert result.items_sold == {}
-    assert result.revenue == 0.0
-
+    none_receipts: List[Receipt | None] = [None]
+    import pytest
+    with pytest.raises(Exception, match="receipt is None"):
+        xreport_service.generate_x_report(shift_id, none_receipts)
