@@ -6,5 +6,5 @@ class Product:
     id: str
     unit: str
     name: str
-    price: float
     barcode: str
+    price: float
