@@ -1,12 +1,12 @@
 # Design-Patterns-Final
 
-for campain descriptions the style looks like this:
+use this format for campaign descriptions:
 
     for discounts:
-        campaign_type;product_id;discount
+        discount;product_id;discount_percentage
     
     for combos:
-        campaign_type;product1|product2|...;discount
+        combo;product1|product2|...;discount_percentage
     
     for buyngetn:
-        campaign_type;product_id;gift_id;gift_required_count
+        buyngetn;product_id;gift_id;gift_required_count
