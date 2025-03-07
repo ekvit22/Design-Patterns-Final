@@ -1,6 +1,9 @@
 # Design-Patterns-Final
 Point of Sales (POS) system service with HTTP API featuring Chain of Responsibility pattern.
 
+# Instructions
+After running main, go to the link in the terminal. Add `/docs` at the end of the link to access the API.
+
 Use this format for campaign descriptions:
 
     for discounts:
