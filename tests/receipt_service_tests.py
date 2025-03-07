@@ -7,6 +7,8 @@ from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.schemas.receipt import AddProductRequest
 from app.services.receipt_service import ReceiptService
+from app.schemas.sales import SalesData
+
 
 
 class ReceiptServiceTests(unittest.TestCase):
@@ -156,3 +158,51 @@ class ReceiptServiceTests(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0], receipt1)
         self.assertEqual(result[1], receipt2)
+
+    def test_get_sales_data_success(self) -> None:
+        mock_repository = Mock()
+        receipt_service = ReceiptService(mock_repository)
+        expected_data = SalesData(n_receipts=5, revenue=500.0)
+        mock_repository.get_sales_data.return_value = expected_data
+
+        result = receipt_service.get_sales_data()
+
+        assert result.n_receipts == 5
+        assert result.revenue == 500.0
+        mock_repository.get_sales_data.assert_called_once()
+
+    def test_get_sales_data_empty(self) -> None:
+        mock_repository = Mock()
+        receipt_service = ReceiptService(mock_repository)
+        expected_data = SalesData(n_receipts=0, revenue=0.0)
+        mock_repository.get_sales_data.return_value = expected_data
+
+        result = receipt_service.get_sales_data()
+
+        assert result.n_receipts == 0
+        assert result.revenue == 0.0
+        mock_repository.get_sales_data.assert_called_once()
+
+    def test_get_sales_data_error(self) -> None:
+        mock_repository = Mock()
+        receipt_service = ReceiptService(mock_repository)
+        mock_repository.get_sales_data.return_value = None
+
+        with unittest.TestCase().assertRaises(Exception) as context:
+            receipt_service.get_sales_data()
+
+        assert "Something went wrong" in str(context.exception)
+        mock_repository.get_sales_data.assert_called_once()
+
+    def test_integration_sales_data_calculation(self) -> None:
+        mock_repository = Mock()
+        receipt_service = ReceiptService(mock_repository)
+
+        mock_sales_data = SalesData(n_receipts=3, revenue=325.0)
+        mock_repository.get_sales_data.return_value = mock_sales_data
+
+        result = receipt_service.get_sales_data()
+
+        assert result.n_receipts == 3
+        assert result.revenue == 325.0
+
