@@ -173,7 +173,6 @@ def test_xreport_generation() -> None:
     assert xreport.revenue == 90.0
     assert xreport.items_sold == {"p1": 3, "p2": 4}
 
-
 def test_create_and_read_receipt() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
     receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
@@ -198,7 +197,7 @@ def test_update_receipt() -> None:
     new_receipt.products.append(product2)
     new_receipt.total += product1.total + product2.total
     receipt_repo.update(new_receipt)
-    updated_receipt = receipt_repo.read("receipt-1")
+    updated_receipt = receipt_repo.read(new_receipt.id)
     assert updated_receipt is not None
     assert len(updated_receipt.products) == 2
     assert updated_receipt.products[0].id == "product-1"
@@ -208,32 +207,32 @@ def test_delete_receipt() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
     receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
     receipt_repo.create(receipt)
-    updated_receipt = receipt_repo.read("receipt-1")
+    updated_receipt = receipt_repo.read(receipt.id)
     assert updated_receipt is not None
     assert updated_receipt.id == "receipt-1"
 
     receipt_repo.delete(receipt.id)
-    deleted_receipt = receipt_repo.read("receipt-1")
+    deleted_receipt = receipt_repo.read(receipt.id)
     assert deleted_receipt is None
 
 def test_open_receipt() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
     receipt = Receipt(id="receipt-1", status="close", products=[], total=0.0)
     receipt_repo.create(receipt)
-    read_receipt = receipt_repo.read("receipt-1")
+    read_receipt = receipt_repo.read(receipt.id)
     assert read_receipt.status == "close"
     receipt_repo.open_receipt(read_receipt.id)
-    updated_receipt = receipt_repo.read("receipt-1")
+    updated_receipt = receipt_repo.read(receipt.id)
     assert updated_receipt.status == "open"
 
 def test_close_receipt() -> None:
     receipt_repo: Repository[Receipt] = Sqlite().receipts()
     receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
     receipt_repo.create(receipt)
-    read_receipt = receipt_repo.read("receipt-1")
+    read_receipt = receipt_repo.read(receipt.id)
     assert read_receipt.status == "open"
     receipt_repo.close_receipt(read_receipt.id)
-    updated_receipt = receipt_repo.read("receipt-1")
+    updated_receipt = receipt_repo.read(receipt.id)
     assert updated_receipt.status == "close"
 
 def test_get_every_receipt() -> None:
@@ -242,7 +241,7 @@ def test_get_every_receipt() -> None:
     receipt2 = Receipt(id="receipt-2", status="closed", products=[], total=100.0)
     receipt_repo.create(receipt1)
     receipt_repo.create(receipt2)
-    receipts = receipt_repo.get_every_receipt(["receipt-1", "receipt-2"])
+    receipts = receipt_repo.get_every_receipt([receipt1.id, receipt2.id])
     assert len(receipts) == 2
     assert receipts[0].id == "receipt-1"
     assert receipts[1].id == "receipt-2"
@@ -253,10 +252,102 @@ def test_get_products_from_receipt() -> None:
     product2 = Products(id="product-2", quantity=3, price=30.0, total=90.0)
     receipt = Receipt(id="receipt-1", status="open", products=[product1, product2], total=100.0)
     receipt_repo.create(receipt)
-    products = receipt_repo.get_products_from_receipt("receipt-1")
+    products = receipt_repo.get_products_from_receipt(receipt.id)
     assert len(products) == 2
     assert products[0].id == "product-1"
     assert products[1].total == 90.0
+
+def test_create_and_read_shift() -> None:
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift = Shift(id="shift-1", status="open", receipts=[])
+    shift_repo.create(shift)
+    read_shift = shift_repo.read(shift.id)
+    assert read_shift is not None
+    assert read_shift.id == "shift-1"
+    assert read_shift.status == "open"
+    assert read_shift.receipts == []
+
+def test_open_shift() -> None:
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift = Shift(id="shift-1", status="closed", receipts=[])
+    shift_repo.create(shift)
+    assert shift_repo.read(shift.id).status == "closed"
+    shift_repo.open_shift(shift.id)
+    assert shift_repo.read(shift.id).status == "open"
+
+def test_close_shift() -> None:
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift = Shift(id="shift-1", status="open", receipts=[])
+    shift_repo.create(shift)
+    assert shift_repo.read(shift.id).status == "open"
+    shift_repo.close_shift(shift.id)
+    assert shift_repo.read(shift.id).status == "close"
+
+def test_add_receipt_to_shift() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift = Shift(id="shift-1", status="open", receipts=[])
+    shift_repo.create(shift)
+
+    receipt = Receipt(id="receipt-1", status="open", products=[], total=50.0)
+    receipt_repo.create(receipt)
+
+    shift_repo.add_receipt_to_shift(shift.id, receipt.id)
+    updated_shift = shift_repo.read(shift.id)
+    assert "receipt-1" in updated_shift.receipts
+
+
+def test_get_shift_receipt_ids() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift = Shift(id="shift-1", status="open", receipts=[])
+    shift_repo.create(shift)
+
+    receipt1 = Receipt(id="receipt-1", status="open", products=[], total=50.0)
+    receipt2 = Receipt(id="receipt-2", status="closed", products=[], total=100.0)
+    receipt_repo.create(receipt1)
+    receipt_repo.create(receipt2)
+
+    shift_repo.add_receipt_to_shift(shift.id, receipt1.id)
+    shift_repo.add_receipt_to_shift(shift.id, receipt2.id)
+    receipt_ids = shift_repo.get_shift_receipt_ids(shift.id)
+    assert len(receipt_ids) == 2
+    assert "receipt-1" in receipt_ids
+    assert "receipt-2" in receipt_ids
+
+
+def test_update_shift() -> None:
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift = Shift(id="shift-1", status="open", receipts=[])
+    shift_repo.create(shift)
+    new_shift = shift_repo.read(shift.id)
+    new_shift.status = "close"
+    shift_repo.update(new_shift)
+    updated_shift = shift_repo.read("shift-1")
+    assert updated_shift.status == "close"
+    assert updated_shift.id == "shift-1"
+
+
+def test_delete_shift() -> None:
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift = Shift(id="shift-1", status="open", receipts=[])
+    shift_repo.create(shift)
+    assert shift_repo.read(shift.id) is not None
+    shift_repo.delete(shift.id)
+    assert shift_repo.read("shift-1") is None
+
+def test_get_all_shifts() -> None:
+    shift_repo: Repository[Shift] = Sqlite().shifts()
+    shift1 = Shift(id="shift-1", status="open", receipts=[])
+    shift2 = Shift(id="shift-2", status="closed", receipts=[])
+    shift_repo.create(shift1)
+    shift_repo.create(shift2)
+    shifts = shift_repo.get_all()
+    assert len(shifts) == 2
+    assert shifts[0].id == "shift-1"
+    assert shifts[1].id == "shift-2"
 
 def test_sales_data_from_receipts() -> None:
     sqlite = Sqlite()
