@@ -169,3 +169,88 @@ def test_xreport_generation() -> None:
     assert xreport.total_receipts == 2
     assert xreport.revenue == 90.0
     assert xreport.items_sold == {"p1": 3, "p2": 4}
+
+
+def test_create_and_read_receipt() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+    receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
+    receipt_repo.create(receipt)
+
+    read_receipt = receipt_repo.read(receipt.id)
+    assert read_receipt is not None
+    assert read_receipt.id == "receipt-1"
+    assert read_receipt.status == "open"
+    assert read_receipt.total == 0.0
+
+def test_update_receipt() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+    receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
+    receipt_repo.create(receipt)
+
+    product1 = Products(id="product-1", quantity=2, price=10.0, total=20.0)
+    product2 = Products(id="product-2", quantity=3, price=40.0, total=120.0)
+    new_receipt = receipt_repo.read(receipt.id)
+    new_receipt.status = "close"
+    new_receipt.products.append(product1)
+    new_receipt.products.append(product2)
+    new_receipt.total += product1.total + product2.total
+    receipt_repo.update(new_receipt)
+    updated_receipt = receipt_repo.read("receipt-1")
+    assert updated_receipt is not None
+    assert len(updated_receipt.products) == 2
+    assert updated_receipt.products[0].id == "product-1"
+    assert updated_receipt.total == 140.0
+
+def test_delete_receipt() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+    receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
+    receipt_repo.create(receipt)
+    updated_receipt = receipt_repo.read("receipt-1")
+    assert updated_receipt is not None
+    assert updated_receipt.id == "receipt-1"
+
+    receipt_repo.delete(receipt.id)
+    deleted_receipt = receipt_repo.read("receipt-1")
+    assert deleted_receipt is None
+
+def test_open_receipt() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+    receipt = Receipt(id="receipt-1", status="close", products=[], total=0.0)
+    receipt_repo.create(receipt)
+    read_receipt = receipt_repo.read("receipt-1")
+    assert read_receipt.status == "close"
+    receipt_repo.open_receipt(read_receipt.id)
+    updated_receipt = receipt_repo.read("receipt-1")
+    assert updated_receipt.status == "open"
+
+def test_close_receipt() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+    receipt = Receipt(id="receipt-1", status="open", products=[], total=0.0)
+    receipt_repo.create(receipt)
+    read_receipt = receipt_repo.read("receipt-1")
+    assert read_receipt.status == "open"
+    receipt_repo.close_receipt(read_receipt.id)
+    updated_receipt = receipt_repo.read("receipt-1")
+    assert updated_receipt.status == "close"
+
+def test_get_every_receipt() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+    receipt1 = Receipt(id="receipt-1", status="open", products=[], total=50.0)
+    receipt2 = Receipt(id="receipt-2", status="closed", products=[], total=100.0)
+    receipt_repo.create(receipt1)
+    receipt_repo.create(receipt2)
+    receipts = receipt_repo.get_every_receipt(["receipt-1", "receipt-2"])
+    assert len(receipts) == 2
+    assert receipts[0].id == "receipt-1"
+    assert receipts[1].id == "receipt-2"
+
+def test_get_products_from_receipt() -> None:
+    receipt_repo: Repository[Receipt] = Sqlite().receipts()
+    product1 = Products(id="product-1", quantity=2, price=5.0, total=10.0)
+    product2 = Products(id="product-2", quantity=3, price=30.0, total=90.0)
+    receipt = Receipt(id="receipt-1", status="open", products=[product1, product2], total=100.0)
+    receipt_repo.create(receipt)
+    products = receipt_repo.get_products_from_receipt("receipt-1")
+    assert len(products) == 2
+    assert products[0].id == "product-1"
+    assert products[1].total == 90.0

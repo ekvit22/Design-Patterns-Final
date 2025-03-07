@@ -148,21 +148,6 @@ class ReceiptRepository(Repository[Receipt]):
         connection.commit()
         return item
 
-
-    def add_product(self, receipt_id: str, product: Products) -> None:
-        connection.execute("""
-            INSERT INTO receipts_products(product_id, receipt_id,
-             quantity, price, total)
-            VALUES(?, ?, ?, ?, ?)""",
-            (product.id, receipt_id, product.quantity, product.price, product.total)
-        )
-
-        connection.execute("""
-            UPDATE receipts SET total = total + ? WHERE receipt_id = ?""",
-           (product.total, receipt_id)
-        )
-        connection.commit()
-
     def open_receipt(self, receipt_id: str) -> None:
         connection.execute("""
             UPDATE receipts SET status = ? WHERE receipt_id = ?""",
@@ -184,7 +169,7 @@ class ReceiptRepository(Repository[Receipt]):
     def delete(self, item_id: str) -> None:
         cursor = connection.cursor()
         cursor.execute("DELETE FROM receipts WHERE receipt_id = ?", (item_id,))
-        cursor.execute("DELETE FROM receipt_products WHERE receipt_id = ?", (item_id,))
+        cursor.execute("DELETE FROM receipts_products WHERE receipt_id = ?", (item_id,))
         connection.commit()
 
     def get_every_receipt(self, receipt_ids: List[str]) -> List[Receipt]:
