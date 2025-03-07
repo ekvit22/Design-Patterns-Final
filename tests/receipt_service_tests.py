@@ -1,6 +1,6 @@
 import unittest
 from typing import Optional
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from app.core.constants import EUR, GEL, GEL_TO_EUR, USD
 from app.core.product import Product

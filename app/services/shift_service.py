@@ -1,5 +1,4 @@
 import uuid
-from http.client import HTTPException
 from typing import List, Optional
 
 from app.core.repository import Repository
@@ -38,7 +37,7 @@ class ShiftService:
         if not shift:
             raise ValueError(f"Shift {shift_id} does not exist.")
         if shift.status != "open":
-            raise ValueError(f"Cannot add receipt to a closed shift.")
+            raise ValueError("Cannot add receipt to a closed shift.")
         self.repository.add_receipt_to_shift(shift_id, receipt_id)
 
     def read_shift(self, shift_id: str) -> Optional[Shift]:

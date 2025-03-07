@@ -1,11 +1,11 @@
-from app.core.xreport import XReport
-from app.services.xreport_service import XReportService
 import unittest
 from unittest.mock import Mock
-from app.core.shift import Shift
-from app.core.receipt import Receipt, Products
-from app.infra.in_memory import InMemory
 
+from app.core.receipt import Products, Receipt
+from app.core.shift import Shift
+from app.core.xreport import XReport
+from app.infra.in_memory import InMemory
+from app.services.xreport_service import XReportService
 
 
 class XReportServiceTests(unittest.TestCase):

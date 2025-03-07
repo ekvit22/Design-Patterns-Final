@@ -43,10 +43,11 @@ class ShiftServiceTests(unittest.TestCase):
         self.assertEqual(result.status, "close")
 
     def test_add_receipt_to_shift(self) -> None:
-        self.mock_repository.read.return_value = Shift(id="shift-1", status="open", receipts=[])
-        # receipt = Receipt(id="receipt-1", status="open", products=[], total=0) WESIT MINDA
+        self.mock_repository.read.return_value = Shift(id="shift-1",
+                                                       status="open", receipts=[])
         self.shift_service.add_receipt_to_shift("shift-1", "receipt-1")
-        self.mock_repository.add_receipt_to_shift.assert_called_once_with("shift-1", "receipt-1")
+        self.mock_repository.add_receipt_to_shift.assert_called_once_with("shift-1",
+                                                                          "receipt-1")
 
         self.mock_repository.read.return_value.receipts.append("receipt-1")
         shift = self.shift_service.read_shift("shift-1")
@@ -56,7 +57,8 @@ class ShiftServiceTests(unittest.TestCase):
         assert len(shift.receipts) == 1
 
     def test_get_shift_receipt_ids(self) -> None:
-        self.mock_repository.get_shift_receipt_ids.return_value = ["receipt-1", "receipt-2"]
+        self.mock_repository.get_shift_receipt_ids.return_value = ["receipt-1",
+                                                                   "receipt-2"]
         receipt_ids = self.shift_service.get_shift_receipt_ids("shift-1")
         assert receipt_ids == ["receipt-1", "receipt-2"]
         self.mock_repository.get_shift_receipt_ids.assert_called_once_with("shift-1")
@@ -64,7 +66,10 @@ class ShiftServiceTests(unittest.TestCase):
 
 
     def test_read_shift(self) -> None:
-        self.mock_repository.read.return_value = Shift(id="shift-1", status="open", receipts=["receipt-1", "receipt-2"])
+        self.mock_repository.read.return_value = Shift(id="shift-1",
+                                                       status="open",
+                                                       receipts=["receipt-1",
+                                                                 "receipt-2"])
         shift = self.shift_service.read_shift("shift-1")
         if shift is None:
             raise AssertionError()

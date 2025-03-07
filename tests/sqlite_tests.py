@@ -2,12 +2,11 @@ from typing import List, Optional
 
 from app.core.campaign.campaign import Campaign
 from app.core.product import Product
+from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
-from app.infra.sqlite import Sqlite
-from app.core.receipt import Receipt, Products
 from app.core.shift import Shift
 from app.core.xreport import XReport
-
+from app.infra.sqlite import Sqlite
 
 
 def test_campaign_sql_memory() -> None:

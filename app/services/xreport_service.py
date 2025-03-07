@@ -4,7 +4,6 @@ from uuid import uuid4
 from app.core.receipt import Receipt
 from app.core.repository import Repository
 from app.core.shift import Shift
-
 from app.core.xreport import XReport
 
 

@@ -1,5 +1,6 @@
 from starlette.testclient import TestClient
 
+
 def test_should_create_shift(http: TestClient) -> None:
     response = http.post("/shifts")
     assert response.status_code == 201

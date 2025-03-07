@@ -8,8 +8,8 @@ from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
 from app.core.shift import Shift
-from app.schemas.sales import SalesData
 from app.core.xreport import XReport
+from app.schemas.sales import SalesData
 
 
 class _Item(Protocol):

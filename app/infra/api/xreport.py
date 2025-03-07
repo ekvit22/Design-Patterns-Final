@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Protocol, Annotated, Dict
+from typing import Annotated, Dict, Protocol
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
