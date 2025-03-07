@@ -37,8 +37,6 @@ class ShiftService:
         shift = self.repository.read(shift_id)
         if not shift:
             raise ValueError(f"Shift {shift_id} does not exist.")
-        if not self.repository.read(receipt_id):
-            raise ValueError(f"Receipt {receipt_id} does not exist.")
         if shift.status != "open":
             raise ValueError(f"Cannot add receipt to a closed shift.")
         self.repository.add_receipt_to_shift(shift_id, receipt_id)
