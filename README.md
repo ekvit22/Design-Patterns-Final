@@ -1,5 +1,5 @@
 # Design-Patterns-Final
-HTTP API for Point of Sales (POS) system using Chain of Responsibility pattern.
+Point of Sales (POS) system service with HTTP API using Chain of Responsibility pattern.
 
 Use this format for campaign descriptions:
 
