@@ -4,8 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, Generic, List, Optional, Protocol, TypeVar
 
 from app.core.campaign.campaign import Campaign
-from app.core.campaign.xreport import XReport
-from fastapi import HTTPException
+# from app.core.campaign.xreport import XReport
 from app.core.product import Product
 from app.core.receipt import Products, Receipt
 from app.core.repository import Repository
@@ -80,14 +79,13 @@ class InMemoryRepository(Generic[ItemT]):
     def close_shift(self, shift_id: str) -> None:
         for item in self.items:
             if hasattr(item, "status") and item.id == shift_id:
-                item.status = "closed"
+                item.status = "close"
                 break
 
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
         shift = self.read(shift_id)
         if (shift is not None and hasattr(shift, "status")
-                and hasattr(shift, "receipts")
-                and shift.status == "open"):
+                and hasattr(shift, "receipts")):
             shift.receipts.append(receipt_id)
 
     def read_with_barcode(self, barcode: str) -> Optional[ItemT]:

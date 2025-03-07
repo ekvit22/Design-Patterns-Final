@@ -1,10 +1,7 @@
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 
-from app.core.product import Product
-from app.core.receipt import Receipt, Products
-from app.core.repository import Repository
 from app.core.campaign.campaign import Campaign
 from app.core.product import Product
 from app.core.receipt import Products, Receipt
@@ -294,14 +291,12 @@ class ShiftRepository(Repository[Shift]):
         connection.commit()
 
     def add_receipt_to_shift(self, shift_id: str, receipt_id: str) -> None:
-        shift = self.read(shift_id)
-        if shift is not None and shift.status == "open":
-            connection.execute("""
-                INSERT INTO shift_receipts(shift_id, receipt_id)
-                VALUES(?, ?)""",
-                (shift_id, receipt_id)
-            )
-            connection.commit()
+        connection.execute("""
+            INSERT INTO shift_receipts(shift_id, receipt_id)
+            VALUES(?, ?)""",
+            (shift_id, receipt_id)
+        )
+        connection.commit()
 
     def get_sales_data(self) -> Optional[SalesData]:
         return None

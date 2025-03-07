@@ -27,7 +27,7 @@ def create_shift_service(req: Request) -> ShiftService:
     return ShiftService(infra.shifts())
 
 @shift_api.post(
-    "/{shift_id}/create",
+    "",
     status_code=201,
     response_model=ShiftModel,
 )
@@ -36,9 +36,9 @@ def create_shift(service: Annotated[ShiftService,
     return service.create()
 
 @shift_api.post(
-    "",
+    "/{id}/open",
     status_code=200,
-    response_model=None,
+    response_model=ShiftModel,
 )
 def open_shift(id: str, service: Annotated[ShiftService,
             Depends(create_shift_service)]) -> Optional[Shift]:
@@ -46,9 +46,9 @@ def open_shift(id: str, service: Annotated[ShiftService,
     return service.read_shift(id)
 
 @shift_api.post(
-    "/{shift_id}/close",
+    "/{id}/close",
     status_code=200,
-    response_model=None,
+    response_model=ShiftModel,
 )
 def close_shift(id: str, service: Annotated[ShiftService,
             Depends(create_shift_service)]) -> Optional[Shift]:
@@ -56,9 +56,9 @@ def close_shift(id: str, service: Annotated[ShiftService,
     return service.read_shift(id)
 
 @shift_api.post(
-    "/{shift_id}/receipts/{receipt_id}",
+    "/{id}/receipts/{receipt_id}",
     status_code=200,
-    response_model=None,
+    response_model=ShiftModel,
 )
 def add_receipt_to_shift(
     id: str, receipt_id: str,
